@@ -32,6 +32,52 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_storage:/qdrant/storage
+
+  data-ingestion-worker:
+    build: ./data_ingestion
+    container_name: rag-ingestion-celery-worker
+    command: >
+      uv run watchfiles --filter python 'uv run celery -A tasks.app worker -l info --concurrency=2'
+    env_file:
+      - ./data_ingestion/.env
+    develop:
+      watch:
+        - path: ./data_ingestion/src
+          action: sync
+          target: /app/
+          ignore:
+              - ./data_ingestion/.venv
+              - .venv
+        - path: ./data_ingestion/pyproject.toml
+          action: rebuild
+    depends_on:
+      - redis
+      - db
+
+  api:
+    build: ./arxiv_api
+    ports:
+      - "8000:8000"
+    command: >
+      uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    env_file:
+      - ./arxiv_api/.env
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_BACKEND_URL: redis://redis:6379/1
+    develop:
+      watch:
+        - path: ./arxiv_api/src
+          action: sync
+          target: /app/
+          ignore:
+              - ./arxiv_api/.venv
+              - .venv
+        - path: ./arxiv_api/pyproject.toml
+          action: rebuild
+    depends_on:
+      - redis
+      - data-ingestion-worker
   
   adminer:
     image: adminer:latest
