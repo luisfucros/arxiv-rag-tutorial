@@ -1,0 +1,16 @@
+[project]
+name = "arxiv-paper-rag-api"
+version = "0.1.0"
+description = "Arxiv assistant API"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "arxiv_lib",
+    "celery>=5.3",
+    "redis",
+    "fastapi>=0.110",
+    "pydantic>=2.6",
+    "uvicorn[standard]>=0.29",
+    "qdrant-client>=1.16.2",
+    "openai>=2.16.0",
+]
