@@ -2,16 +2,15 @@ from typing import List
 
 from api.handlers.instances import arxiv_client
 from arxiv_lib.schemas import ArxivPaper
-from schemas 
+from schemas import PaperRequest
 from config import settings
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/arxiv", tags=["Arxiv"])
 
-# todo: payload
 @router.post("/search-paper", response_model=List[ArxivPaper])
-def search_paper(query: str):
-    papers = arxiv_client.search_papers(query=query, max_results=settings.arxiv.max_results)
+def search_paper(paper_request: PaperRequest):
+    papers = arxiv_client.search_papers(query=paper_request.query, max_results=settings.arxiv.max_results)
     return papers
 
 
