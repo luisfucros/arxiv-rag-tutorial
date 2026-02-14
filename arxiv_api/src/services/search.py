@@ -3,6 +3,7 @@ from typing import List, Dict, Optional
 from .tasks import TaskService
 from config import settings
 from arxiv_lib.vector_db.qdrant import QdrantDB
+from arxiv_lib.tasks.enums import TaskNames
 
 
 @dataclass(frozen=True)
@@ -27,12 +28,12 @@ class SearchEngineService:
         """
         # Get embeddings for the query
         query_dense_embeddings = self.task_manager.run_task(
-            "embeddings.dense",
+            TaskNames.embeddings_dense,
             {"text": [query]}
         )
 
         query_sparse_embeddings = self.task_manager.run_task(
-            "embeddings.sparse",
+            TaskNames.embeddings_sparse,
             {"text": [query]}
         )
 
