@@ -27,24 +27,24 @@ class TaskService:
 
     def async_task(self, task_name: TaskNames, params: Dict[str, Any]) -> str:
         task_params = self.check_params(task_name, params)
-        log = self.repository.create(task_name, task_params)
+        log = self.repository.create(task_name, task_params.model_dump())
 
         result = self.celery_client.send_task(
             task_name=task_name,
             task_id=log.task_id,
-            kwargs=task_params,
+            kwargs={"params": task_params.model_dump()},
         )
 
         return result.task_id
 
     def run_task(self, task_name: TaskNames, params: Dict[str, Any]) -> Any:
         task_params = self.check_params(task_name, params)
-        log = self.repository.create(task_name, task_params)
+        log = self.repository.create(task_name, task_params.model_dump())
 
         result = self.celery_client.send_task(
             task_name=task_name,
             task_id=log.task_id,
-            kwargs=task_params,
+            kwargs={"params": task_params.model_dump()},
         )
 
         output = result.get()

@@ -2,7 +2,7 @@ from typing import List
 
 from api.handlers.instances import arxiv_client
 from arxiv_lib.schemas import ArxivPaper
-from schemas import PaperRequest
+from schemas.arxiv import PaperRequest
 from config import settings
 from fastapi import APIRouter
 
