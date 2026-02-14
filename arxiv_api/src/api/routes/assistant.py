@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
 
 from api.dependencies import get_arxiv_assistant
 from assistant.main import ArxivAssistant
