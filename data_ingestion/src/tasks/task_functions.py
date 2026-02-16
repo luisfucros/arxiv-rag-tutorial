@@ -4,7 +4,10 @@ from tasks.celery_app import app
 from services.embeddings.fastembed import DenseEmbedding
 from services.embeddings.fastembed import SparseEmbedding
 from arxiv_lib.repositories.paper import PaperRepository
+from arxiv_lib.tasks.enums import TaskNames
+from arxiv_lib.tasks.schemas import PaperMetadataRequest, EmbeddingsRequest
 from . import fetcher, database, hybrid_chunker, settings
+
 from .base import BaseTask
 
 
@@ -14,13 +17,11 @@ sparse_model = SparseEmbedding()
 
 
 @app.task(
-    name="tasks.fetch_and_process_papers",
+    name=TaskNames.metadata_fetcher_task,
     base=BaseTask
 )
 def fetch_and_process_papers_task(
-    paper_ids: List[str],
-    process_pdfs: bool = True,
-    store_to_db: bool = True,
+    params: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
     Celery task wrapper for MetadataFetcher.fetch_and_process_papers
@@ -29,13 +30,15 @@ def fetch_and_process_papers_task(
         Dict with db_results and vectordb_results from both processing stages
     """
 
+    fetcher_params = PaperMetadataRequest(**params)
+
     with database.get_session() as session:  # type: ignore
         paper_repo = PaperRepository(session)
 
         db_results = fetcher.fetch_and_process_papers(
-            paper_ids=paper_ids,
-            process_pdfs=process_pdfs,
-            store_to_db=store_to_db,
+            paper_ids=fetcher_params.paper_ids,
+            process_pdfs=fetcher_params.process_pdfs,
+            store_to_db=fetcher_params.store_to_db,
             db_session=session,
         )
 
@@ -77,38 +80,42 @@ def fetch_and_process_papers_task(
         return {
             "db_results": db_results,
             "vectordb_results": vectordb_results,
-            "total_requested": len(paper_ids)
+            "total_requested": len(fetcher_params.paper_ids)
         }
 
 
 @app.task(
-    name="embeddings.dense",
+    name=TaskNames.embeddings_dense,
     autoretry_for=(Exception,),
     retry_backoff=5,
     retry_kwargs={"max_retries": 3},
     base=BaseTask
 )
 def generate_dense_embedding(
-    text: TextInput,
+    params: Dict[str, Any]
 ) -> Dict[str, List[List[float]]]:
     """
     Generate dense vector embeddings.
     """
+    embedding_params = EmbeddingsRequest(**params)
+    text = embedding_params.text
 
     return {"embeddings": dense_model.embed(text)}
 
 
 @app.task(
-    name="embeddings.sparse",
+    name=TaskNames.embeddings_sparse,
     autoretry_for=(Exception,),
     retry_backoff=5,
     retry_kwargs={"max_retries": 3},
     base=BaseTask
 )
 def generate_sparse_embedding(
-    text: TextInput,
+    params: Dict[str, Any]
 ) -> Dict[str, List[Dict[str, List[float]]]]:
     """
     Generate sparse vector embeddings.
     """
+    embedding_params = EmbeddingsRequest(**params)
+    text = embedding_params.text
     return {"sparse_embeddings": sparse_model.embed(text)}
