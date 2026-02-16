@@ -1,11 +1,9 @@
-from api.routes import arxiv, assistant, metadata, paper, search
+from api.routes import arxiv, assistant, metadata, paper, search, tasks
 from arxiv import HTTPError
-from arxiv_lib.exceptions import ArxivServiceError, EntityNotFound, ServiceNotAvailable
-from celery.result import AsyncResult
+from arxiv_lib.exceptions import ArxivServiceError, EntityNotFound, EntityAlreadyExists, ConflictError, ServiceNotAvailable
 from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
-from schemas.metadata import TaskStatusResponse
-from services.builders import celery_app
+
 
 app = FastAPI(
     title="Arxiv Assistant API",
@@ -13,6 +11,7 @@ app = FastAPI(
     version="0.1.0",
 )
 
+app.include_router(tasks.router)
 app.include_router(arxiv.router)
 app.include_router(metadata.router)
 app.include_router(paper.router)
@@ -26,6 +25,8 @@ def arxiv_error_handler(request, exc):
 
     if isinstance(exc, EntityNotFound):
         status_code = status.HTTP_404_NOT_FOUND
+    if isinstance(exc, EntityAlreadyExists) or isinstance(exc, ConflictError):
+        status_code = status.HTTP_409_CONFLICT
     elif isinstance(exc, HTTPError):
         status_code = status.HTTP_429_TOO_MANY_REQUESTS
     elif isinstance(exc, ServiceNotAvailable):
@@ -40,14 +41,3 @@ def arxiv_error_handler(request, exc):
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
-
-@app.get("/tasks/{task_id}", response_model=TaskStatusResponse)
-def get_task_status(task_id: str):
-    result = AsyncResult(task_id, app=celery_app)
-    task_status = TaskStatusResponse(
-        task_id=task_id,
-        status=result.state,
-        result=result.result if result.ready() else None,
-    )
-    return task_status
