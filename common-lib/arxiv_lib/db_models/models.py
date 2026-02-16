@@ -45,7 +45,6 @@ class ArxivTask(Base):
     status = Column(Enum(TaskStatus), default=TaskStatus.pending, nullable=False)
     task_type = Column(String, nullable=False)
     parameters = Column(JSON, nullable=False)
-    # caller_id = Column(int, nullable=False)
 
     error_type = Column(String, nullable=True)
     error_message = Column(String, nullable=True)
