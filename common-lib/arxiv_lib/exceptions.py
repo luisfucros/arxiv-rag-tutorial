@@ -14,8 +14,7 @@ class APICallFailed(ArxivServiceError):
 
 class ConflictError(ArxivServiceError):
     """
-    Thrown when there is a conflict in the operation, such as trying to create
-    an item that already exists.
+    Thrown when there is a conflict in the operation.
     """
     pass
 
