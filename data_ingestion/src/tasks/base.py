@@ -5,6 +5,8 @@ from arxiv_lib.db_models.models import ArxivTask
 from arxiv_lib.db_models.enums import TaskStatus
 from datetime import datetime, timezone
 from . import database
+from .utils import make_json_safe
+
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +62,7 @@ class BaseTask(Task):
                 job = session.scalar(query)
                 job.status = TaskStatus.completed
                 job.updated_at = datetime.now(timezone.utc)
-                job.result = retval
+                job.result = make_json_safe(retval)
                 if job.error_type:
                     job.error_type = None
                     job.error_message = None
