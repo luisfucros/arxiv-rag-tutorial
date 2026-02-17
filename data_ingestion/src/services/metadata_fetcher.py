@@ -39,12 +39,12 @@ class MetadataFetcher:
         :type max_concurrent_parsing: int
         :type settings: Optional[Settings]
         """
-        from arxiv_lib.config import get_settings
+        from config import settings as config_settings
 
         self.arxiv_client = arxiv_client
         self.pdf_parser = pdf_parser
         self.pdf_cache_dir = pdf_cache_dir or self.arxiv_client.pdf_cache_dir
-        self.settings = settings or get_settings()
+        self.settings = settings or config_settings
 
     def fetch_and_process_papers(
         self,

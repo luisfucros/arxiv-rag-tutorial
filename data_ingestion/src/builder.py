@@ -1,4 +1,4 @@
-from config import get_settings
+from config import settings
 from arxiv_lib.arxiv.client import ArxivClient
 from arxiv_lib.db.factory import make_database
 from services.pdf_parser.parser import PDFParserService
@@ -9,8 +9,7 @@ from services.indexing.hybrid_indexer import HybridIndexingService
 from services.metadata_fetcher import MetadataFetcher
 
 
-def get_metadata_fetcher():
-    settings = get_settings()
+def get_services():
 
     database = make_database()
 
@@ -38,4 +37,4 @@ def get_metadata_fetcher():
 
     hybrid_indexer = HybridIndexingService(chunker, embeddings, vector_db_client)
 
-    return fetcher, database, hybrid_indexer, settings
+    return fetcher, database, hybrid_indexer

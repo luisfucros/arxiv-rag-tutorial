@@ -1,7 +1,6 @@
 from celery import Celery
-from config import get_settings
+from config import settings
 
-settings = get_settings()
 
 app = Celery(
     "arxiv-data-pipeline",

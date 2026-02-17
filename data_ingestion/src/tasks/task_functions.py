@@ -7,14 +7,14 @@ from services.embeddings.fastembed import SparseEmbedding
 from arxiv_lib.repositories.paper import PaperRepository
 from arxiv_lib.tasks.enums import TaskNames
 from arxiv_lib.tasks.schemas import PaperMetadataRequest, EmbeddingsRequest
-from . import fetcher, database, hybrid_chunker, settings
+from . import fetcher, database, hybrid_chunker
+from config import settings
 
 from .base import BaseTask
 
 logger = logging.getLogger(__name__)
 
 
-TextInput = Union[str, List[str]]
 dense_model = DenseEmbedding()
 sparse_model = SparseEmbedding()
 
