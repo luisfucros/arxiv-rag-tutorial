@@ -5,7 +5,7 @@ from arxiv_lib.db_models.models import ArxivTask
 from arxiv_lib.db_models.enums import TaskStatus
 from datetime import datetime, timezone
 from . import database
-from .utils import make_json_safe
+from arxiv_lib.tasks.utils import make_json_safe
 
 
 logger = logging.getLogger(__name__)
