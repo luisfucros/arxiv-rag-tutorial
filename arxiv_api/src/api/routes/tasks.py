@@ -43,9 +43,9 @@ def get_task(task_id: str, task_service: TaskService = Depends(get_task_service)
     return TaskStatusResponse(task_id=task.task_id, status=task.status, result=None)
 
 
-@router.post("/reset/{task_id}", response_model=TaskResponse)
+@router.post("/retry/{task_id}", response_model=TaskResponse)
 def retry_task(task_id: str, task_service: TaskService = Depends(get_task_service)):
-    """Reset a failed task and re-enqueue it. Returns a simple status."""
+    """Retry a failed task and re-enqueue it. Returns a simple status."""
     celery_id = task_service.retry_task(task_id)
 
     return TaskResponse(task_id=celery_id, status="requeued")
