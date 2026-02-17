@@ -225,8 +225,6 @@ class QdrantDB(VectorDB):
                     raise ValueError(f"Document {i}: 'dense_embedding' must be a non-empty list")
                 if hybrid and (not sparse_vector or not isinstance(sparse_vector, dict)):
                     raise ValueError(f"Document {i}: 'sparse_embedding' required for hybrid mode")
-                # if hybrid and ("indices" not in sparse_vector or "values" not in sparse_vector):
-                #     raise ValueError(f"Document {i}: sparse_embedding must contain 'indices' and 'values'")
 
                 ids.append(self._string_to_positive_int(doc_id))
                 dense_vectors.append(dense_vector)
