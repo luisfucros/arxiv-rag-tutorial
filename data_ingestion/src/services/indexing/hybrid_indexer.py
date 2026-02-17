@@ -137,9 +137,13 @@ class HybridIndexingService:
                     "dense_embedding": dense_embedding,
                     "sparse_embedding": sparse_embedding})
 
-            # Step 4: Index chunks into vector database
-            self.vector_db_client.add_batch_docs(collection_name, chunks_with_embeddings,
-                                                 hybrid=True)
+            # Step 4: Index chunks into vector database in batches
+            for j in range(0, len(chunks_with_embeddings), self.embedding_batch_size):
+                batch = chunks_with_embeddings[j:j + self.embedding_batch_size]
+                logger.info(
+                    f"Indexing batch {j // self.embedding_batch_size + 1} with {len(batch)} "
+                    f"chunks to collection {collection_name}")
+                self.vector_db_client.add_batch_docs(collection_name, batch, hybrid=True)
 
             logger.info(f"Indexed paper {arxiv_id}: success")
 
