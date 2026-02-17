@@ -1,3 +1,4 @@
+import logging
 from celery import Task
 from sqlalchemy import select
 from arxiv_lib.db_models.models import ArxivTask
@@ -5,15 +6,13 @@ from arxiv_lib.db_models.enums import TaskStatus
 from datetime import datetime, timezone
 from . import database
 
+logger = logging.getLogger(__name__)
+
 
 class BaseTask(Task):
     """
     Base class for all Celery tasks in the service.
     """
-    # autoretry_for = (RetryTask,)
-    # max_retries = 5
-    # retry_backoff = True
-    # retry_jitter = True
 
     def on_failure(
             self,
@@ -26,6 +25,12 @@ class BaseTask(Task):
         Log the task failure in the DB.
         """
         err_type = type(exc)
+        logger.error(
+            "Task failed [%s]: %s",
+            task_id,
+            str(exc),
+            exc_info=True
+        )
         try:
             with database.get_session() as session:
                 query = select(ArxivTask).where(ArxivTask.task_id == task_id)
@@ -39,16 +44,16 @@ class BaseTask(Task):
                 session.commit()
 
         except Exception as e:
-            print(f"error: {e}")
-            # logger.exception(
-            #     "Failed to log task failure [%s]",
-            #     type(e).__name__
-            # )
+            logger.exception(
+                "Failed to log task failure [%s]",
+                type(e).__name__
+            )
 
     def on_success(self, retval, task_id, args, kwargs):
         """
         Log the task success in the DB.
         """
+        logger.info("Task completed successfully [%s]", task_id)
         try:
             with database.get_session() as session:
                 query = select(ArxivTask).where(ArxivTask.task_id == task_id)
@@ -64,8 +69,7 @@ class BaseTask(Task):
                 session.commit()
 
         except Exception as e:
-            print(f"error: {e}")
-            # logger.exception(
-            #     "Failed to log task success [%s]",
-            #     type(e).__name__
-            # )
+            logger.exception(
+                "Failed to log task success [%s]",
+                type(e).__name__
+            )

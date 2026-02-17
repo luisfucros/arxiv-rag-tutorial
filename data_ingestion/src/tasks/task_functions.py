@@ -1,3 +1,4 @@
+import logging
 from typing import List, Dict, Any, Union
 
 from tasks.celery_app import app
@@ -9,6 +10,8 @@ from arxiv_lib.tasks.schemas import PaperMetadataRequest, EmbeddingsRequest
 from . import fetcher, database, hybrid_chunker, settings
 
 from .base import BaseTask
+
+logger = logging.getLogger(__name__)
 
 
 TextInput = Union[str, List[str]]
@@ -29,6 +32,7 @@ def fetch_and_process_papers_task(
     Returns:
         Dict with db_results and vectordb_results from both processing stages
     """
+    logger.info("Starting fetch_and_process_papers_task with params: %s", params)
 
     fetcher_params = PaperMetadataRequest(**params)
 
@@ -41,6 +45,8 @@ def fetch_and_process_papers_task(
             store_to_db=fetcher_params.store_to_db,
             db_session=session,
         )
+        
+        logger.info("Database results: %s papers stored", db_results.get("stored", 0))
 
         vectordb_results = {}
 
@@ -97,10 +103,12 @@ def generate_dense_embedding(
     """
     Generate dense vector embeddings.
     """
+    logger.info("Generating dense embeddings")
     embedding_params = EmbeddingsRequest(**params)
     text = embedding_params.text
-
-    return {"embeddings": dense_model.embed(text)}
+    result = dense_model.embed(text)
+    logger.info("Dense embeddings generated successfully")
+    return {"embeddings": result}
 
 
 @app.task(
@@ -116,6 +124,9 @@ def generate_sparse_embedding(
     """
     Generate sparse vector embeddings.
     """
+    logger.info("Generating sparse embeddings")
     embedding_params = EmbeddingsRequest(**params)
     text = embedding_params.text
-    return {"sparse_embeddings": sparse_model.embed(text)}
+    result = sparse_model.embed(text)
+    logger.info("Sparse embeddings generated successfully")
+    return {"sparse_embeddings": result}

@@ -1,8 +1,12 @@
+import logging
+
 from api.routes import arxiv, assistant, metadata, paper, search, tasks
 from arxiv import HTTPError
 from arxiv_lib.exceptions import ArxivServiceError, EntityNotFound, EntityAlreadyExists, ConflictError, ServiceNotAvailable
 from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
+
+logger = logging.getLogger(__name__)
 
 
 app = FastAPI(
@@ -32,11 +36,26 @@ def arxiv_error_handler(request, exc):
     elif isinstance(exc, ServiceNotAvailable):
         status_code = status.HTTP_503_SERVICE_UNAVAILABLE
 
+    logger.error(
+        "ArxivServiceError [%s]: %s",
+        type(exc).__name__,
+        str(exc),
+        exc_info=True
+    )
+
     return JSONResponse(
         status_code=status_code,
         content={"detail": str(exc)},
     )
 
+
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Arxiv Assistant API starting up")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    logger.info("Arxiv Assistant API shutting down")
 
 @app.get("/health")
 def health():
