@@ -6,7 +6,6 @@ from arxiv_lib.db_models.enums import TaskStatus
 from arxiv_lib.exceptions import EntityNotFound, ConflictError
 
 
-
 class TaskRepository:
     def __init__(self, session: Session):
         self.session = session

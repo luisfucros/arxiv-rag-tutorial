@@ -1,24 +1,28 @@
+import logging
 from services.builders import celery_app
 from fastapi import APIRouter, Depends, HTTPException, status
 from schemas.metadata import TaskStatusResponse, TaskResponse
 from celery.result import AsyncResult
 from api.dependencies import get_task_service
 from services.tasks import TaskService
-from arxiv_lib.exceptions import EntityNotFound, ConflictError
 from typing import List
 
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 
 @router.get("/status/{task_id}", response_model=TaskStatusResponse)
 def get_task_status(task_id: str):
+    logger.debug("Fetching status for task: %s", task_id)
     result = AsyncResult(task_id, app=celery_app)
     task_status = TaskStatusResponse(
         task_id=task_id,
         status=result.state,
         result=result.result if result.ready() else None,
     )
+    logger.debug("Task status: %s", result.state)
     return task_status
 
 
