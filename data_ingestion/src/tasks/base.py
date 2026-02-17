@@ -55,6 +55,7 @@ class BaseTask(Task):
                 job = session.scalar(query)
                 job.status = TaskStatus.completed
                 job.updated_at = datetime.now(timezone.utc)
+                job.result = retval
                 if job.error_type:
                     job.error_type = None
                     job.error_message = None
