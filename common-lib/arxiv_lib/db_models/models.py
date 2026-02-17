@@ -1,8 +1,10 @@
 import uuid
 from datetime import datetime, timezone
+from typing import Optional, Dict, Any, List
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, String, Text, Enum
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import JSON, Boolean, DateTime, String, Text, Enum
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import UUID
 from ..db.databases.postgresql import Base
 from .enums import TaskStatus
 
@@ -11,46 +13,96 @@ class Paper(Base):
     __tablename__ = "papers"
 
     # Core arXiv metadata
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    arxiv_id = Column(String, unique=True, nullable=False, index=True)
-    title = Column(String, nullable=False)
-    authors = Column(JSON, nullable=False)
-    abstract = Column(Text, nullable=False)
-    categories = Column(JSON, nullable=False)
-    published_date = Column(DateTime, nullable=False)
-    pdf_url = Column(String, nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
 
-    # Parsed PDF content (added for comprehensive storage)
-    raw_text = Column(Text, nullable=True)
-    sections = Column(JSON, nullable=True)
-    references = Column(JSON, nullable=True)
+    arxiv_id: Mapped[str] = mapped_column(
+        String,
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    authors: Mapped[List[str]] = mapped_column(JSON, nullable=False)
+    abstract: Mapped[str] = mapped_column(Text, nullable=False)
+    categories: Mapped[List[str]] = mapped_column(JSON, nullable=False)
+    published_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    pdf_url: Mapped[str] = mapped_column(String, nullable=False)
+
+    # Parsed PDF content
+    raw_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    sections: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
+    references: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(JSON, nullable=True)
 
     # PDF processing metadata
-    parser_used = Column(String, nullable=True)
-    parser_metadata = Column(JSON, nullable=True)
-    pdf_processed = Column(Boolean, default=False, nullable=False)
-    pdf_processing_date = Column(DateTime, nullable=True)
+    parser_used: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    parser_metadata: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
+
+    pdf_processed: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
+    pdf_processing_date: Mapped[Optional[datetime]] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
 
     # Timestamps
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc),
-                        onupdate=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
 
 
 class ArxivTask(Base):
     __tablename__ = "tasks"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    task_id = Column(String, unique=True, nullable=False, index=True)
-    status = Column(Enum(TaskStatus), default=TaskStatus.pending, nullable=False)
-    task_type = Column(String, nullable=False)
-    parameters = Column(JSON, nullable=False)
-    result = Column(JSON, nullable=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
 
-    error_type = Column(String, nullable=True)
-    error_message = Column(String, nullable=True)
+    task_id: Mapped[str] = mapped_column(
+        String,
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+
+    status: Mapped[TaskStatus] = mapped_column(
+        Enum(TaskStatus, name="task_status_enum"),
+        default=TaskStatus.pending,
+        nullable=False,
+    )
+
+    task_type: Mapped[str] = mapped_column(String, nullable=False)
+    parameters: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False)
+    result: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
+
+    error_type: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    error_message: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     # Timestamps
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc),
-                        onupdate=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
