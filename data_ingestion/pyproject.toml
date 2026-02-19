@@ -15,6 +15,8 @@ dependencies = [
     "redis==7.2.0",
     "arxiv>=2.4.0",
     "fastembed>=0.7.4",
+    "boto3>=1.42.52",
+    "localstack-client>=2.11",
 ]
 
 [dependency-groups]
