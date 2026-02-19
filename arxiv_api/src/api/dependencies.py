@@ -31,8 +31,10 @@ def get_search_engine_service(
 
 def get_arxiv_assistant(
     search_engine: SearchEngineService = Depends(get_search_engine_service),
+    paper_repo: PaperRepository = Depends(get_paper_repo)
 ) -> ArxivAssistant:
     return ArxivAssistant(
         search_engine=search_engine,
+        paper_repo=paper_repo,
         client=openai_client,
     )
