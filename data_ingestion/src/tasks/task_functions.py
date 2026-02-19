@@ -45,7 +45,7 @@ def fetch_and_process_papers_task(
             store_to_db=fetcher_params.store_to_db,
             db_session=session,
         )
-        
+
         logger.info("Database results: %s papers stored", db_results.get("stored", 0))
 
         vectordb_results = {}
