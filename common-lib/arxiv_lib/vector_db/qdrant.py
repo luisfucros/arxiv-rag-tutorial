@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 from zlib import crc32
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct, HnswConfigDiff
+from qdrant_client.models import Distance, VectorParams, PointStruct, HnswConfigDiff, Filter, FieldCondition, MatchValue
 from qdrant_client.http.models.models import QueryResponse
 from qdrant_client import models
 from qdrant_client.http.exceptions import UnexpectedResponse
@@ -47,13 +47,8 @@ class QdrantDB(VectorDB):
             **kwargs: Additional parameters
 
         Raises:
-            ValueError: If vector_size is invalid
             UnexpectedResponse: If collection creation fails
         """
-        if not collection_name or not isinstance(collection_name, str):
-            raise ValueError("collection_name must be a non-empty string")
-        if vector_size <= 0:
-            raise ValueError("vector_size must be a positive integer")
 
         hnsw_config = None
         quantization_config = None
@@ -117,11 +112,8 @@ class QdrantDB(VectorDB):
             collection_name: Name of the collection to delete
 
         Raises:
-            ValueError: If collection_name is invalid
             UnexpectedResponse: If deletion fails
         """
-        if not collection_name or not isinstance(collection_name, str):
-            raise ValueError("collection_name must be a non-empty string")
 
         try:
             self.client.delete_collection(collection_name=collection_name)
@@ -159,15 +151,8 @@ class QdrantDB(VectorDB):
             metadata: Optional metadata associated with the document
 
         Raises:
-            ValueError: If inputs are invalid
             UnexpectedResponse: If insertion fails
         """
-        if not collection_name or not isinstance(collection_name, str):
-            raise ValueError("collection_name must be a non-empty string")
-        if not doc_id or not isinstance(doc_id, str):
-            raise ValueError("doc_id must be a non-empty string")
-        if not vector or not isinstance(vector, list):
-            raise ValueError("vector must be a non-empty list")
 
         try:
             point = PointStruct(
@@ -198,13 +183,8 @@ class QdrantDB(VectorDB):
             None
 
         Raises:
-            ValueError: If inputs are invalid
             UnexpectedResponse: If batch insertion fails
         """
-        if not collection_name or not isinstance(collection_name, str):
-            raise ValueError("collection_name must be a non-empty string")
-        if not docs or not isinstance(docs, list):
-            raise ValueError("docs must be a non-empty list")
 
         try:
             ids = []
@@ -254,26 +234,29 @@ class QdrantDB(VectorDB):
         except Exception as e:
             raise RuntimeError(f"Failed to add batch documents: {str(e)}") from e
 
-    def delete_doc(self, collection_name: str, doc_id: str) -> None:
+    def delete_doc(self, collection_name: str, doc_name: str, doc_id: str) -> None:
         """Delete a document from a collection.
 
         Args:
             collection_name: Name of the collection
+            doc_name: Document name
             doc_id: Unique identifier of the document to delete
 
         Raises:
-            ValueError: If inputs are invalid
             UnexpectedResponse: If deletion fails
         """
-        if not collection_name or not isinstance(collection_name, str):
-            raise ValueError("collection_name must be a non-empty string")
-        if not doc_id or not isinstance(doc_id, str):
-            raise ValueError("doc_id must be a non-empty string")
 
         try:
             self.client.delete(
                 collection_name=collection_name,
-                points_selector=[self._string_to_positive_int(doc_id)],
+                points_selector=Filter(
+                    must=[
+                        FieldCondition(
+                            key=doc_name,
+                            match=MatchValue(value=doc_id)
+                        )
+                    ]
+                ),
             )
         except UnexpectedResponse:
             raise
@@ -296,15 +279,8 @@ class QdrantDB(VectorDB):
             List of search results with ids, scores, and payloads
 
         Raises:
-            ValueError: If inputs are invalid
             UnexpectedResponse: If search fails
         """
-        if not collection_name or not isinstance(collection_name, str):
-            raise ValueError("collection_name must be a non-empty string")
-        if limit <= 0:
-            raise ValueError("limit must be a positive integer")
-        if not query_vector or not isinstance(query_vector, dict):
-            raise ValueError("query_vector must be a non-empty dict")
 
         filtering = self._create_filter(filter) if filter else None
 
@@ -358,12 +334,7 @@ class QdrantDB(VectorDB):
 
         Returns:
             Qdrant Filter object
-
-        Raises:
-            ValueError: If filter_dict is invalid
         """
-        if not filter_dict or not isinstance(filter_dict, dict):
-            raise ValueError("filter_dict must be a non-empty dictionary")
 
         must_clauses: List[models.Condition] = [
             models.FieldCondition(
@@ -392,13 +363,8 @@ class QdrantDB(VectorDB):
             QueryResponse with search results
 
         Raises:
-            ValueError: If sparse_vector format is invalid
             UnexpectedResponse: If search fails
         """
-        if not sparse_vector or not isinstance(sparse_vector, dict):
-            raise ValueError("sparse_vector must be a non-empty dict")
-        if "indices" not in sparse_vector or "values" not in sparse_vector:
-            raise ValueError("sparse_vector must contain 'indices' and 'values' keys")
 
         try:
             results = self.client.query_points(

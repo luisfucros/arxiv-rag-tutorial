@@ -95,7 +95,7 @@ class ChunkingSettings(BaseConfigSettings):
 class Settings(BaseConfigSettings):
     app_version: str = "0.1.0"
     debug: bool = True
-    environment: Literal["development", "staging", "production"] = "development"
+    environment: Literal["development", "staging", "production", "local"] = "local"
     service_name: str = "rag-api"
 
     postgres_database_url: str = "postgresql://rag_user:rag_password@db:5432/rag_db"
@@ -109,6 +109,9 @@ class Settings(BaseConfigSettings):
     vectordb_host: str = "vectordb"
     vectordb_port: int = 6333
     collection_name: str = "arxiv_papers"
+
+    artifacts_buket: str = "arxiv-service"
+    localstack_host: str = "localstack:4566"
 
     arxiv: ArxivSettings = Field(default_factory=ArxivSettings)
     pdf_parser: PDFParserSettings = Field(default_factory=PDFParserSettings)

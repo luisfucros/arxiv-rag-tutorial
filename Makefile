@@ -6,7 +6,16 @@ include .env
 export
 endif
 
-.PHONY: install-dependencies package-wheel clean-wheels
+# LocalStack configuration
+ENDPOINT=http://localhost:4566
+BUCKET=arxiv-service
+REGION=us-east-1
+
+export AWS_ACCESS_KEY_ID=test
+export AWS_SECRET_ACCESS_KEY=test
+export AWS_DEFAULT_REGION=$(REGION)
+
+.PHONY: install-dependencies package-wheel clean-wheels create-bucket list-buckets delete-bucket
 
 # Files that trigger dependency install
 DEPS_SOURCES := $(shell find . -name pyproject.toml) uv.lock
@@ -38,3 +47,6 @@ package-wheel: $(PACKAGE_SOURCES)
 	@for dir in $(TARGET_WHEEL_DIRS); do \
 		mkdir -p $$dir && cp -R $(WHEELS_DIR) $$dir; \
 	done
+
+make-local-bucket:
+	aws --endpoint-url=$(ENDPOINT) s3 mb s3://$(BUCKET)
