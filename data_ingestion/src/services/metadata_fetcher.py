@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from exceptions import MetadataFetchingException, PipelineException
 from arxiv_lib.repositories.paper import PaperRepository
 from arxiv_lib.schemas import PaperCreate
-from schemas.pdf_parser.models import PdfContent
+from .s3_handler import S3Handler
 from arxiv_lib.arxiv.client import ArxivClient
 from arxiv_lib.config import Settings
 from arxiv_lib.exceptions import EntityNotFound
@@ -24,6 +24,7 @@ class MetadataFetcher:
         arxiv_client: ArxivClient,
         pdf_parser: PDFParserService,
         pdf_cache_dir: Optional[Path] = None,
+        object_storage: Optional[S3Handler] = None,
         settings: Optional[Settings] = None,
     ):
         """Initialize metadata fetcher with services and settings.
@@ -45,6 +46,8 @@ class MetadataFetcher:
         self.pdf_parser = pdf_parser
         self.pdf_cache_dir = pdf_cache_dir or self.arxiv_client.pdf_cache_dir
         self.settings = settings or config_settings
+        self.object_storage = object_storage or S3Handler(bucket_name=self.settings.artifacts_buket,
+                                                          region_name="us-east-1")
 
     def fetch_and_process_papers(
         self,
@@ -110,27 +113,31 @@ class MetadataFetcher:
                         "pdf_processed": False,
                     }
 
-                    if process_pdfs and pdf_path.exists():
-                        try:
-                            pdf_content = self.pdf_parser.parse_pdf(pdf_path)
+                    if pdf_path.exists():
+                        self.object_storage.upload_file(str(pdf_path), s3_key=str(arxiv_id))
+                        logger.info(f"PDF stored in bucket: {arxiv_id}")
 
-                            if pdf_content:
-                                paper_dict.update({
-                                    "raw_text": pdf_content.raw_text,
-                                    "sections": [s.model_dump() for s in pdf_content.sections],
-                                    "parser_used": pdf_content.parser_used.value,
-                                    "parser_metadata": pdf_content.metadata,
-                                    "pdf_processed": True,
-                                    "pdf_processing_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                })
-                                logger.info(f"PDF processed: {arxiv_id}")
-                                results["processed"] += 1
+                        if process_pdfs:
+                            try:
+                                pdf_content = self.pdf_parser.parse_pdf(pdf_path)
 
-                        except Exception as e:
-                            logger.exception(f"PDF parsing failed for {arxiv_id}")
-                            results["errors"].append(
-                                {"arxiv_id": arxiv_id, "stage": "pdf_parsing", "error": str(e)}
-                            )
+                                if pdf_content:
+                                    paper_dict.update({
+                                        "raw_text": pdf_content.raw_text,
+                                        "sections": [s.model_dump() for s in pdf_content.sections],
+                                        "parser_used": pdf_content.parser_used.value,
+                                        "parser_metadata": pdf_content.metadata,
+                                        "pdf_processed": True,
+                                        "pdf_processing_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                    })
+                                    logger.info(f"PDF processed: {arxiv_id}")
+                                    results["processed"] += 1
+
+                            except Exception as e:
+                                logger.exception(f"PDF parsing failed for {arxiv_id}")
+                                results["errors"].append(
+                                    {"arxiv_id": arxiv_id, "stage": "pdf_parsing", "error": str(e)}
+                                )
 
                     paper_create = PaperCreate(**paper_dict)
                     results["papers"].append(paper_dict)
