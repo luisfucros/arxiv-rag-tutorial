@@ -1,4 +1,4 @@
-SEARCH_TOOL = [
+TOOLS = [
     {
         "type": "function",
         "function": {
@@ -11,11 +11,32 @@ SEARCH_TOOL = [
                         "type": "string",
                         "description": "The search query text",
                     },
+                    "arxiv_id": {
+                        "type": "string",
+                        "description": "The arxiv paper id",
+                    },
                 },
-                "required": ["query"],
+                "required": ["query", "arxiv_id"],
                 "additionalProperties": False,
             },
-            "strict": True,
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_by_arxiv_id",
+            "description": "Retrieve a single ArXiv paper by its exact arXiv ID.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "arxiv_id": {
+                        "type": "string",
+                        "description": "The exact arXiv identifier of the paper (e.g., '2301.12345')",
+                    },
+                },
+                "required": ["arxiv_id"],
+                "additionalProperties": False,
+            },
         },
     }
 ]
