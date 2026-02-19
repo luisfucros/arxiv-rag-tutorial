@@ -176,12 +176,12 @@ class HybridIndexingService:
         }
 
         for paper in papers:
-            # todo: delete existing chunks
-            # arxiv_id = paper.get("arxiv_id")
+            arxiv_id = paper.get("arxiv_id")
 
             # Optionally delete existing chunks
-            # if replace_existing and arxiv_id:
-            #     self.opensearch_client.delete_paper_chunks(arxiv_id)
+            if replace_existing and arxiv_id and collection_name in self.vector_db_client.list_collections():
+                self.vector_db_client.delete_doc(collection_name, "arxiv_id", arxiv_id)
+                logger.info(f"Deleted chunks for paper {arxiv_id}")
 
             # Index the paper
             stats = self.index_paper(paper, collection_name=collection_name)
@@ -199,19 +199,3 @@ class HybridIndexingService:
         )
 
         return total_stats
-
-    # todo: reindex
-    # def reindex_paper(self, arxiv_id: str, paper_data: Dict) -> Dict[str, int]:
-    #     """Reindex a paper by deleting old chunks and creating new ones.
-
-    #     :param arxiv_id: ArXiv ID of the paper
-    #     :param paper_data: Updated paper data
-    #     :returns: Indexing statistics
-    #     """
-    #     # Delete existing chunks
-    #     deleted = self.opensearch_client.delete_paper_chunks(arxiv_id)
-    #     if deleted:
-    #         logger.info(f"Deleted existing chunks for paper {arxiv_id}")
-
-    #     # Index with new data
-    #     return await self.index_paper(paper_data)
