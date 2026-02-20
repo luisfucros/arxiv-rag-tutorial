@@ -2,11 +2,32 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 
-from sqlalchemy import JSON, Boolean, DateTime, String, Text, Enum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import JSON, Boolean, DateTime, String, Text, Enum, Integer, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import UUID
 from ..db.databases.postgresql import Base
-from .enums import TaskStatus
+from .enums import TaskStatus, UserRoles
+import sqlalchemy
+
+
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    full_name: Mapped[str] = mapped_column(String(255), nullable=True)
+    role: Mapped[UserRoles] = mapped_column(Enum(UserRoles), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (sqlalchemy.Index("users_email_unique_id", "email", unique=True),)
+
+    tasks: Mapped[List["ArxivTask"]] = relationship(back_populates="owner")
+
+    def __repr__(self) -> str:
+        return f"User(id={self.id!r}, name={self.full_name!r}, email={self.email!r})"
 
 
 class Paper(Base):
@@ -94,6 +115,9 @@ class ArxivTask(Base):
 
     error_type: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     error_message: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    owner_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
@@ -106,3 +130,7 @@ class ArxivTask(Base):
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
+
+    owner: Mapped["User"] = relationship(back_populates="tasks")
+
+    __table_args__ = (sqlalchemy.Index("arxiv_task_task_id_unique_id", "task_id", unique=True),)

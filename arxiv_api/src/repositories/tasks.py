@@ -10,11 +10,13 @@ class TaskRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    def create(self, task_name: str, parameters: Dict[str, Any]) -> ArxivTask:
+    def create(self, task_name: str, parameters: Dict[str, Any],
+               owner_id: int) -> ArxivTask:
         task = ArxivTask(
             task_id=str(uuid.uuid4()),
             task_type=task_name,
             parameters=parameters,
+            owner_id=owner_id
         )
         self.session.add(task)
         self.session.commit()

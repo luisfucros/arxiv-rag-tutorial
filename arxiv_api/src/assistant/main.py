@@ -40,6 +40,7 @@ class ArxivAssistant:
     def chat_stream(
         self,
         chat_history: List[Dict[str, Any]],
+        user_id: int,
         max_rounds: int = 5,
     ) -> Generator[str, None, None]:
         """
@@ -109,7 +110,7 @@ class ArxivAssistant:
             )
 
             # Execute tools
-            self._execute_tool_calls_streaming(collected_tool_calls, messages)
+            self._execute_tool_calls_streaming(collected_tool_calls, messages, user_id)
 
         # Safety fallback (non-streamed final response)
         final_response = self._create_completion(messages)
@@ -118,6 +119,7 @@ class ArxivAssistant:
     def chat(
         self,
         chat_history: List[Dict[str, Any]],
+        user_id: int,
         max_rounds: int = 5,
     ) -> str:
         """
@@ -141,6 +143,7 @@ class ArxivAssistant:
             self._execute_tool_calls(
                 assistant_message.tool_calls,
                 messages,
+                user_id=user_id
             )
 
         # Safety fallback (if max rounds reached)
@@ -161,6 +164,7 @@ class ArxivAssistant:
         self,
         tool_calls: List[Any],
         messages: List[Dict[str, Any]],
+        user_id: int
     ) -> None:
         for tool_call in tool_calls:
             handler = self._tool_handlers.get(tool_call.function.name)
@@ -171,7 +175,7 @@ class ArxivAssistant:
 
             try:
                 arguments = self._parse_arguments(tool_call.function.arguments)
-                result = handler(arguments)
+                result = handler(arguments, user_id=user_id)
             except Exception as exc:
                 logger.exception("Tool execution failed: %s", tool_call.function.name)
                 result = {"error": str(exc)}
@@ -188,6 +192,7 @@ class ArxivAssistant:
         self,
         tool_calls: List[Any],
         messages: List[Dict[str, Any]],
+        user_id: int
     ) -> None:
         for tool_call in tool_calls:
             handler = self._tool_handlers.get(tool_call["function"]["name"])
@@ -198,7 +203,7 @@ class ArxivAssistant:
 
             try:
                 arguments = self._parse_arguments(tool_call["function"]["arguments"])
-                result = handler(arguments)
+                result = handler(arguments, user_id=user_id)
             except Exception as exc:
                 logger.exception("Tool execution failed: %s", tool_call["function"]["name"])
                 result = {"error": str(exc)}
@@ -218,7 +223,7 @@ class ArxivAssistant:
             logger.error("Invalid JSON tool arguments: %s", raw_args)
             raise ValueError("Invalid tool arguments") from exc
 
-    def _handle_search_arxiv(self, args: Dict[str, Any]) -> Dict[str, Any]:
+    def _handle_search_arxiv(self, args: Dict[str, Any], user_id: int) -> Dict[str, Any]:
         query = args.get("query")
         arxiv_id = args.get("arxiv_id")
         print(f"query: {query}")
@@ -231,12 +236,13 @@ class ArxivAssistant:
         results = self.search_engine.search(
             query=query,
             top_k=args.get("top_k", self.top_k),
-            filters={"arxiv_id": arxiv_id} if arxiv_id is not None else None
+            filters={"arxiv_id": arxiv_id} if arxiv_id is not None else None,
+            user_id=user_id
         )
 
         return {"results": results}
 
-    def _handle_get_by_arxiv_id(self, args: Dict[str, Any]) -> Dict[str, Any]:
+    def _handle_get_by_arxiv_id(self, args: Dict[str, Any], user_id: int) -> Dict[str, Any]:
         arxiv_id = args.get("arxiv_id")
         print(f"arxiv_id: {arxiv_id}")
         if not arxiv_id:

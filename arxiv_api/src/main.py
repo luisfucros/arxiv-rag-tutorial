@@ -1,8 +1,9 @@
 import logging
 
-from api.routes import arxiv, assistant, metadata, paper, search, tasks
+from api.routes import arxiv, assistant, metadata, paper, search, tasks, login, users
 from arxiv import HTTPError
-from arxiv_lib.exceptions import ArxivServiceError, EntityNotFound, EntityAlreadyExists, ConflictError, ServiceNotAvailable
+from arxiv_lib.exceptions import (ArxivServiceError, EntityNotFound, EntityAlreadyExists,
+                                  ConflictError, ServiceNotAvailable)
 from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 
@@ -21,6 +22,8 @@ app.include_router(metadata.router)
 app.include_router(paper.router)
 app.include_router(search.router)
 app.include_router(assistant.router)
+app.include_router(login.router)
+app.include_router(users.router)
 
 
 @app.exception_handler(ArxivServiceError)
@@ -53,9 +56,11 @@ def arxiv_error_handler(request, exc):
 async def startup_event():
     logger.info("Arxiv Assistant API starting up")
 
+
 @app.on_event("shutdown")
 async def shutdown_event():
     logger.info("Arxiv Assistant API shutting down")
+
 
 @app.get("/health")
 def health():

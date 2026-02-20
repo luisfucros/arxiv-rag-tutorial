@@ -4,7 +4,6 @@ from clients.celery_client import CeleryClient
 from repositories.tasks import TaskRepository
 from sqlalchemy.orm import Session
 from arxiv_lib.tasks.enums import TaskNames
-from arxiv_lib.tasks.mapping import TASK_PARAMS
 
 
 class TaskService:
@@ -12,8 +11,9 @@ class TaskService:
         self.repository = TaskRepository(session)
         self.celery_client = celery_client
 
-    def async_task(self, task_name: TaskNames, params: Dict[str, Any]) -> str:
-        log = self.repository.create(task_name, params)
+    def async_task(self, task_name: TaskNames, params: Dict[str, Any],
+                   owner_id: int) -> str:
+        log = self.repository.create(task_name, params, owner_id)
 
         result = self.celery_client.send_task(
             task_name=task_name,
@@ -23,8 +23,9 @@ class TaskService:
 
         return result.task_id
 
-    def run_task(self, task_name: TaskNames, params: Dict[str, Any]) -> Any:
-        log = self.repository.create(task_name, params)
+    def run_task(self, task_name: TaskNames, params: Dict[str, Any],
+                 owner_id: int) -> Any:
+        log = self.repository.create(task_name, params, owner_id)
 
         result = self.celery_client.send_task(
             task_name=task_name,

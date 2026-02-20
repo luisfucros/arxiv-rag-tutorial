@@ -9,9 +9,10 @@ from api.dependencies import get_task_service
 from services.tasks import TaskService
 from typing import List
 from arxiv_lib.tasks.utils import make_json_safe
+from api.dependencies import get_current_user
 
 
-router = APIRouter(prefix="/tasks", tags=["Tasks"])
+router = APIRouter(prefix="/tasks", tags=["Tasks"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("/status/{task_id}", response_model=TaskStatusResponse)

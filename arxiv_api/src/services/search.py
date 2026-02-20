@@ -17,6 +17,7 @@ class SearchEngineService:
     def search(
         self,
         query: str,
+        user_id: int,
         top_k: int = 10,
         filters: Optional[Dict[str, str]] = None,
     ) -> List[Dict]:
@@ -29,12 +30,14 @@ class SearchEngineService:
         # Get embeddings for the query
         query_dense_embeddings = self.task_manager.run_task(
             TaskNames.embeddings_dense,
-            {"text": [query]}
+            {"text": [query]},
+            owner_id=user_id
         )
 
         query_sparse_embeddings = self.task_manager.run_task(
             TaskNames.embeddings_sparse,
-            {"text": [query]}
+            {"text": [query]},
+            owner_id=user_id
         )
 
         query_vector = {**query_sparse_embeddings, **query_dense_embeddings}
