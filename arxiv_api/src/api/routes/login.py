@@ -24,8 +24,15 @@ def login_access_token(
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect email or password")
 
-    if not security.verify_password(form_data.password, user.password):
+    verified, updated_password_hash = security.verify_password(form_data.password, user.password)
+    if not verified:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Credentials")
+    
+    if updated_password_hash:
+        user.hashed_password = updated_password_hash
+        session.add(user)
+        session.commit()
+        session.refresh(user)
 
     access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
     return Token(
