@@ -1,11 +1,3 @@
-# Makefile
-
-# Load .env if it exists
-ifneq (,$(wildcard .env))
-include .env
-export
-endif
-
 # LocalStack configuration
 ENDPOINT=http://localhost:4566
 BUCKET=arxiv-service
@@ -50,3 +42,9 @@ package-wheel: $(PACKAGE_SOURCES)
 
 make-local-bucket:
 	aws --endpoint-url=$(ENDPOINT) s3 mb s3://$(BUCKET)
+
+# todo: workflow docker compose + make local bucket
+run-app:
+	@package-wheel
+	docker compose watchup --build -d
+	@make-local-bucket
