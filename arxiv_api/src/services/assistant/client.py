@@ -1,9 +1,12 @@
 import json
 import logging
-from typing import Any, Dict, Generator, List
+from typing import Any, Dict, Generator, List, Optional
 
 from openai import OpenAI
 from services.search import SearchEngineService
+from services.cache import CacheClient
+from repositories.chat_history import ChatRepository
+from uuid import UUID
 
 from .prompts import SYSTEM_PROMPT
 from .tools import TOOLS
@@ -20,15 +23,19 @@ class ArxivAssistant:
     def __init__(
         self,
         search_engine: SearchEngineService,
+        chat_repo: ChatRepository,
         paper_repo: PaperRepository,
         client: OpenAI,
+        cache: Optional[CacheClient] = None,
         model: str = DEFAULT_MODEL,
         top_k: int = 10,
     ) -> None:
         self.client = client
         self.model = model
         self.paper_repo = paper_repo
+        self.chat_repo = chat_repo
         self.search_engine = search_engine
+        self.cache = cache
         self.top_k = top_k
         self.tools = TOOLS
 
@@ -41,6 +48,7 @@ class ArxivAssistant:
         self,
         chat_history: List[Dict[str, Any]],
         user_id: int,
+        session_id: UUID,
         max_rounds: int = 5,
     ) -> Generator[str, None, None]:
         """
@@ -49,6 +57,23 @@ class ArxivAssistant:
         Tool calls are executed internally (not streamed).
         """
 
+        if self.chat_repo.get_session(session_id, user_id) is None:
+            self.chat_repo.create_session(user_id, session_id)
+
+        user_query = chat_history[-1]["content"]
+
+        if self.cache:
+            cached_response = None
+            try:
+                cached_response = self.cache.find_cached_response(user_query)
+                if cached_response:
+                    logger.info("Returning cached response for exact query match")
+                    yield cached_response.get("response")
+                    return
+            except Exception as e:
+                logger.warning(f"Cache check failed, proceeding with normal flow: {e}")
+
+        self.chat_repo.create_message(session_id, "user", user_query)
         messages = self._build_messages(chat_history)
 
         for _ in range(max_rounds):
@@ -98,6 +123,13 @@ class ArxivAssistant:
             collected_tool_calls = list(tool_calls_by_index.values())
             # If no tool calls → done streaming
             if not collected_tool_calls:
+                self.chat_repo.create_message(session_id, "assistant", assistant_message["content"])
+                if self.cache:
+                    try:
+                        self.cache.store_response(user_query, assistant_message["content"])
+                    except Exception as e:
+                        logger.warning(f"Failed to store response in cache: {e}")
+
                 return
 
             # Append assistant message
@@ -113,13 +145,21 @@ class ArxivAssistant:
             self._execute_tool_calls_streaming(collected_tool_calls, messages, user_id)
 
         # Safety fallback (non-streamed final response)
-        final_response = self._create_completion(messages)
-        yield final_response.choices[0].message.content or ""
+        response = self._create_completion(messages)
+        final_response = response.choices[0].message.content or ""
+        self.chat_repo.create_message(session_id, "assistant", final_response)
+        if self.cache:
+            try:
+                self.cache.store_response(user_query, final_response)
+            except Exception as e:
+                logger.warning(f"Failed to store response in cache: {e}")
+        yield final_response
 
     def chat(
         self,
         chat_history: List[Dict[str, Any]],
         user_id: int,
+        session_id: UUID,
         max_rounds: int = 5,
     ) -> str:
         """
@@ -128,6 +168,22 @@ class ArxivAssistant:
         - If tool call → execute and continue reasoning
         """
 
+        if self.chat_repo.get_session(session_id, user_id) is None:
+            self.chat_repo.create_session(user_id, session_id)
+
+        user_query = chat_history[-1]["content"]
+
+        if self.cache:
+            cached_response = None
+            try:
+                cached_response = self.cache.find_cached_response(user_query)
+                if cached_response:
+                    logger.info("Returning cached response for exact query match")
+                    return cached_response.get("response")
+            except Exception as e:
+                logger.warning(f"Cache check failed, proceeding with normal flow: {e}")
+
+        self.chat_repo.create_message(session_id, "user", user_query)
         messages = self._build_messages(chat_history)
 
         for _ in range(max_rounds):
@@ -138,6 +194,12 @@ class ArxivAssistant:
             messages.append(assistant_message)
 
             if not assistant_message.tool_calls:
+                self.chat_repo.create_message(session_id, "assistant", assistant_message.content or "")
+                if self.cache:
+                    try:
+                        self.cache.store_response(user_query, assistant_message.content or "")
+                    except Exception as e:
+                        logger.warning(f"Failed to store response in cache: {e}")
                 return assistant_message.content or ""
 
             self._execute_tool_calls(
@@ -147,8 +209,15 @@ class ArxivAssistant:
             )
 
         # Safety fallback (if max rounds reached)
-        final_response = self._create_completion(messages)
-        return final_response.choices[0].message.content or ""
+        response = self._create_completion(messages)
+        final_response = response.choices[0].message.content or ""
+        self.chat_repo.create_message(session_id, "assistant", final_response)
+        if self.cache:
+            try:
+                self.cache.store_response(user_query, final_response)
+            except Exception as e:
+                logger.warning(f"Failed to store response in cache: {e}")
+        return final_response
 
     def _build_messages(self, chat_history: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         return [{"role": "system", "content": SYSTEM_PROMPT}, *chat_history]
@@ -252,4 +321,4 @@ class ArxivAssistant:
 
         paper = self.paper_repo.get_by_arxiv_id(arxiv_id=arxiv_id)
 
-        return {"paper": paper_to_dict(paper)}
+        return {"paper": paper_to_dict(paper) if paper is not None else None}

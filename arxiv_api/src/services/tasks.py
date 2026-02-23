@@ -7,8 +7,8 @@ from arxiv_lib.tasks.enums import TaskNames
 
 
 class TaskService:
-    def __init__(self, session: Session, celery_client: CeleryClient):
-        self.repository = TaskRepository(session)
+    def __init__(self, repository: TaskRepository, celery_client: CeleryClient):
+        self.repository = repository
         self.celery_client = celery_client
 
     def async_task(self, task_name: TaskNames, params: Dict[str, Any],

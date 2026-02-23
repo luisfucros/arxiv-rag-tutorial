@@ -3,7 +3,6 @@ from datetime import datetime, timedelta, timezone
 import jwt
 from jwt.exceptions import InvalidTokenError
 
-from api.core import security
 from config import settings
 from arxiv_lib.db_models.models import Paper
 

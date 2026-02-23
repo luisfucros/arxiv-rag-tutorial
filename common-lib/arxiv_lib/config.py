@@ -92,6 +92,25 @@ class ChunkingSettings(BaseConfigSettings):
     section_based: bool = True  # Use section-based chunking when available
 
 
+class RedisSettings(BaseConfigSettings):
+    model_config = SettingsConfigDict(
+        extra="ignore",
+        frozen=True,
+        case_sensitive=False,
+    )
+
+    host: str = "redis"
+    port: int = 6379
+    password: str = ""
+    db: int = 0
+    decode_responses: bool = True
+    socket_timeout: int = 30
+    socket_connect_timeout: int = 30
+
+    # Cache settings
+    ttl_hours: int = 6  # Cache TTL in hours
+
+
 class Settings(BaseConfigSettings):
     app_version: str = "0.1.0"
     debug: bool = True
@@ -120,6 +139,7 @@ class Settings(BaseConfigSettings):
     arxiv: ArxivSettings = Field(default_factory=ArxivSettings)
     pdf_parser: PDFParserSettings = Field(default_factory=PDFParserSettings)
     chunking: ChunkingSettings = Field(default_factory=ChunkingSettings)
+    redis: RedisSettings = Field(default_factory=RedisSettings)
 
     @field_validator("postgres_database_url")
     @classmethod

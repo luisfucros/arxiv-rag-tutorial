@@ -25,6 +25,10 @@ class User(Base):
     __table_args__ = (sqlalchemy.Index("users_email_unique_id", "email", unique=True),)
 
     tasks: Mapped[List["ArxivTask"]] = relationship(back_populates="owner")
+    chat_sessions: Mapped[List["ChatSession"]] = relationship(
+        back_populates="owner",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"User(id={self.id!r}, name={self.full_name!r}, email={self.email!r})"
@@ -134,3 +138,67 @@ class ArxivTask(Base):
     owner: Mapped["User"] = relationship(back_populates="tasks")
 
     __table_args__ = (sqlalchemy.Index("arxiv_task_task_id_unique_id", "task_id", unique=True),)
+
+
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    title: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
+    owner_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    owner: Mapped["User"] = relationship(back_populates="chat_sessions")
+    messages: Mapped[List["ChatMessage"]] = relationship(
+        back_populates="session",
+        cascade="all, delete-orphan",
+    )
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("chat_sessions.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    role: Mapped[str] = mapped_column(String, nullable=False)  
+
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+
+    message_metadata: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    session: Mapped["ChatSession"] = relationship(back_populates="messages")
