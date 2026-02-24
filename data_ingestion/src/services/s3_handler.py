@@ -1,6 +1,7 @@
-import os
 import logging
+import os
 from typing import Optional
+
 from botocore.exceptions import ClientError
 
 if os.getenv("ENVIRONMENT") == "local":
@@ -32,12 +33,19 @@ class S3Handler:
         """
         try:
             self.s3.upload_file(local_path, self.bucket_name, s3_key)
-            logger.info("Uploaded file '%s' to bucket '%s' as '%s'",
-                        local_path, self.bucket_name, s3_key)
+            logger.info(
+                "Uploaded file '%s' to bucket '%s' as '%s'", local_path, self.bucket_name, s3_key
+            )
             return True
         except ClientError as e:
-            logger.error("Upload failed for '%s' to '%s/%s': %s",
-                         local_path, self.bucket_name, s3_key, e, exc_info=True)
+            logger.error(
+                "Upload failed for '%s' to '%s/%s': %s",
+                local_path,
+                self.bucket_name,
+                s3_key,
+                e,
+                exc_info=True,
+            )
             return False
 
     def read_object(self, s3_key: str) -> Optional[bytes]:
@@ -48,12 +56,10 @@ class S3Handler:
         """
         try:
             response = self.s3.get_object(Bucket=self.bucket_name, Key=s3_key)
-            logger.info("Read object '%s' from bucket '%s'",
-                        s3_key, self.bucket_name)
+            logger.info("Read object '%s' from bucket '%s'", s3_key, self.bucket_name)
             return response["Body"].read()
         except ClientError as e:
-            logger.error("Read failed for '%s/%s': %s",
-                         self.bucket_name, s3_key, e, exc_info=True)
+            logger.error("Read failed for '%s/%s': %s", self.bucket_name, s3_key, e, exc_info=True)
             return None
 
     def download_file(self, s3_key: str, local_path: str) -> bool:
@@ -65,12 +71,17 @@ class S3Handler:
         """
         try:
             self.s3.download_file(self.bucket_name, s3_key, local_path)
-            logger.info("Downloaded '%s/%s' to '%s'",
-                        self.bucket_name, s3_key, local_path)
+            logger.info("Downloaded '%s/%s' to '%s'", self.bucket_name, s3_key, local_path)
             return True
         except ClientError as e:
-            logger.error("Download failed for '%s/%s' to '%s': %s",
-                         self.bucket_name, s3_key, local_path, e, exc_info=True)
+            logger.error(
+                "Download failed for '%s/%s' to '%s': %s",
+                self.bucket_name,
+                s3_key,
+                local_path,
+                e,
+                exc_info=True,
+            )
             return False
 
     def delete_object(self, s3_key: str) -> bool:
@@ -81,10 +92,10 @@ class S3Handler:
         """
         try:
             self.s3.delete_object(Bucket=self.bucket_name, Key=s3_key)
-            logger.info("Deleted object '%s' from bucket '%s'",
-                        s3_key, self.bucket_name)
+            logger.info("Deleted object '%s' from bucket '%s'", s3_key, self.bucket_name)
             return True
         except ClientError as e:
-            logger.error("Delete failed for '%s/%s': %s",
-                         self.bucket_name, s3_key, e, exc_info=True)
+            logger.error(
+                "Delete failed for '%s/%s': %s", self.bucket_name, s3_key, e, exc_info=True
+            )
             return False

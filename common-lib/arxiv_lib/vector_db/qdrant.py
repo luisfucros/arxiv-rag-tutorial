@@ -1,10 +1,19 @@
 from typing import Any, Dict, List, Optional
 from zlib import crc32
-from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct, HnswConfigDiff, Filter, FieldCondition, MatchValue
-from qdrant_client.http.models.models import QueryResponse
-from qdrant_client import models
+
+from qdrant_client import QdrantClient, models
 from qdrant_client.http.exceptions import UnexpectedResponse
+from qdrant_client.http.models.models import QueryResponse
+from qdrant_client.models import (
+    Distance,
+    FieldCondition,
+    Filter,
+    HnswConfigDiff,
+    MatchValue,
+    PointStruct,
+    VectorParams,
+)
+
 from .base import VectorDB
 
 
@@ -33,10 +42,14 @@ class QdrantDB(VectorDB):
         except Exception:
             raise
 
-    def create_collection(self, collection_name: str, vector_size: int = 384,
-                          distance: Distance = Distance.COSINE,
-                          hybrid: bool = False,
-                          **kwargs) -> None:
+    def create_collection(
+        self,
+        collection_name: str,
+        vector_size: int = 384,
+        distance: Distance = Distance.COSINE,
+        hybrid: bool = False,
+        **kwargs,
+    ) -> None:
         """Create a new collection in Qdrant.
 
         Args:
@@ -72,9 +85,7 @@ class QdrantDB(VectorDB):
             )
 
             sparse_vectors_config = {
-                "sparse": models.SparseVectorParams(
-                    index=models.SparseIndexParams(on_disk=False)
-                )
+                "sparse": models.SparseVectorParams(index=models.SparseIndexParams(on_disk=False))
             }
 
         try:
@@ -140,8 +151,13 @@ class QdrantDB(VectorDB):
         except Exception as e:
             raise RuntimeError(f"Failed to list collections: {str(e)}") from e
 
-    def add_doc(self, collection_name: str, doc_id: str, vector: List[float],
-                metadata: Optional[Dict[str, Any]] = None) -> None:
+    def add_doc(
+        self,
+        collection_name: str,
+        doc_id: str,
+        vector: List[float],
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """Add a single document to a collection.
 
         Args:
@@ -169,8 +185,9 @@ class QdrantDB(VectorDB):
         except Exception as e:
             raise RuntimeError(f"Failed to add document '{doc_id}': {str(e)}") from e
 
-    def add_batch_docs(self, collection_name: str, docs: List[Dict[str, Any]],
-                       hybrid: bool = False) -> None:
+    def add_batch_docs(
+        self, collection_name: str, docs: List[Dict[str, Any]], hybrid: bool = False
+    ) -> None:
         """Add multiple documents to a collection in batch.
 
         Args:
@@ -210,10 +227,12 @@ class QdrantDB(VectorDB):
                 dense_vectors.append(dense_vector)
                 payloads.append(metadata)
                 if hybrid is True and sparse_vector is not None:
-                    sparse_vectors.append(models.SparseVector(
-                        indices=sparse_vector["indices"],
-                        values=sparse_vector["values"],
-                    ))
+                    sparse_vectors.append(
+                        models.SparseVector(
+                            indices=sparse_vector["indices"],
+                            values=sparse_vector["values"],
+                        )
+                    )
 
             # Construct vectors dictionary
             vectors_dict = {"dense": dense_vectors}
@@ -222,11 +241,7 @@ class QdrantDB(VectorDB):
 
             self.client.upsert(
                 collection_name=collection_name,
-                points=models.Batch(
-                    ids=ids,
-                    vectors=vectors_dict,
-                    payloads=payloads
-                )
+                points=models.Batch(ids=ids, vectors=vectors_dict, payloads=payloads),
             )
 
         except UnexpectedResponse:
@@ -250,12 +265,7 @@ class QdrantDB(VectorDB):
             self.client.delete(
                 collection_name=collection_name,
                 points_selector=Filter(
-                    must=[
-                        FieldCondition(
-                            key=doc_name,
-                            match=MatchValue(value=doc_id)
-                        )
-                    ]
+                    must=[FieldCondition(key=doc_name, match=MatchValue(value=doc_id))]
                 ),
             )
         except UnexpectedResponse:
@@ -263,9 +273,14 @@ class QdrantDB(VectorDB):
         except Exception as e:
             raise RuntimeError(f"Failed to delete document '{doc_id}': {str(e)}") from e
 
-    def search_docs(self, collection_name: str, query_vector: Dict[str, Any],
-                    limit: int = 10, hybrid: bool = False,
-                    filter: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def search_docs(
+        self,
+        collection_name: str,
+        query_vector: Dict[str, Any],
+        limit: int = 10,
+        hybrid: bool = False,
+        filter: Optional[Dict[str, Any]] = None,
+    ) -> List[Dict[str, Any]]:
         """Search for similar documents in a collection.
 
         Args:
@@ -293,14 +308,16 @@ class QdrantDB(VectorDB):
 
             if hybrid:
                 if "sparse_embeddings" not in query_vector or not query_vector["sparse_embeddings"]:
-                    raise ValueError("query_vector must contain 'sparse_embeddings' for hybrid search")
+                    raise ValueError(
+                        "query_vector must contain 'sparse_embeddings' for hybrid search"
+                    )
                 sparse_embedding = query_vector["sparse_embeddings"][0]
                 results = self._hybrid_search(
                     collection_name=collection_name,
                     sparse_vector=sparse_embedding,
                     dense_vector=dense_embedding,
                     query_filter=filtering,
-                    limit=limit
+                    limit=limit,
                 )
             else:
                 results = self.client.query_points(
@@ -308,7 +325,7 @@ class QdrantDB(VectorDB):
                     query=dense_embedding,
                     using="dense",
                     query_filter=filtering,
-                    limit=limit
+                    limit=limit,
                 )
 
             search_results = [
@@ -337,18 +354,18 @@ class QdrantDB(VectorDB):
         """
 
         must_clauses: List[models.Condition] = [
-            models.FieldCondition(
-                key=key,
-                match=models.MatchValue(value=value)
-            )
+            models.FieldCondition(key=key, match=models.MatchValue(value=value))
             for key, value in filter_dict.items()
         ]
         return models.Filter(must=must_clauses)
 
     def _hybrid_search(
-        self, collection_name: str, sparse_vector: Dict[str, Any],
-        dense_vector: List[float], query_filter: Optional[models.Filter] = None,
-        limit: int = 10
+        self,
+        collection_name: str,
+        sparse_vector: Dict[str, Any],
+        dense_vector: List[float],
+        query_filter: Optional[models.Filter] = None,
+        limit: int = 10,
     ) -> QueryResponse:
         """Perform hybrid search using both sparse and dense vectors.
 
@@ -406,15 +423,11 @@ class QdrantDB(VectorDB):
         """Check if a point with the given content already exists."""
         filter = models.Filter(
             must=[
-                models.FieldCondition(
-                    key=key,
-                    match=models.MatchValue(value=value)
-                ) for key, value in payload.items()
+                models.FieldCondition(key=key, match=models.MatchValue(value=value))
+                for key, value in payload.items()
             ]
         )
         count_result = self.client.count(
-            collection_name=collection_name,
-            count_filter=filter,
-            exact=True
+            collection_name=collection_name, count_filter=filter, exact=True
         )
         return count_result.count > 0

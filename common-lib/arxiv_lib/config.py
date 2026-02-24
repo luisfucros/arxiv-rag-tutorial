@@ -1,7 +1,6 @@
 import os
-
-from typing import Literal
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -11,7 +10,8 @@ class PostgreSQLSettings(BaseSettings):
     """PostgreSQL configuration settings."""
 
     database_url: str = Field(
-        default="postgresql://rag_user:rag_password@localhost:5432/rag_db", description="PostgreSQL database URL"
+        default="postgresql://rag_user:rag_password@localhost:5432/rag_db",
+        description="PostgreSQL database URL",
     )
     echo_sql: bool = Field(default=False, description="Enable SQL query logging")
     pool_size: int = Field(default=20, description="Database connection pool size")
@@ -145,7 +145,9 @@ class Settings(BaseConfigSettings):
     @classmethod
     def validate_database_url(cls, v: str) -> str:
         if not (v.startswith("postgresql://") or v.startswith("postgresql+psycopg2://")):
-            raise ValueError("Database URL must start with 'postgresql://' or 'postgresql+psycopg2://'")
+            raise ValueError(
+                "Database URL must start with 'postgresql://' or 'postgresql+psycopg2://'"
+            )
         return v
 
 

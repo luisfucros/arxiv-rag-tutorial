@@ -1,13 +1,13 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
 
-from sqlalchemy import JSON, Boolean, DateTime, String, Text, Enum, Integer, ForeignKey
+import sqlalchemy
+from sqlalchemy import JSON, UUID, Boolean, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import UUID
+
 from ..db.databases.postgresql import Base
 from .enums import TaskStatus, UserRoles
-import sqlalchemy
 
 
 class User(Base):
@@ -190,7 +190,7 @@ class ChatMessage(Base):
         nullable=False,
     )
 
-    role: Mapped[str] = mapped_column(String, nullable=False)  
+    role: Mapped[str] = mapped_column(String, nullable=False)
 
     content: Mapped[str] = mapped_column(Text, nullable=False)
 

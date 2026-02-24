@@ -1,7 +1,6 @@
 from celery import Celery
 from config import settings
 
-
 app = Celery(
     "arxiv-data-pipeline",
     broker=settings.celery_broker_url,

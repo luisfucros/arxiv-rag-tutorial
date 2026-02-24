@@ -1,5 +1,7 @@
-from fastembed import SparseTextEmbedding, TextEmbedding
 from typing import Dict, List
+
+from fastembed import SparseTextEmbedding, TextEmbedding
+
 from .base import EmbeddingModel
 
 

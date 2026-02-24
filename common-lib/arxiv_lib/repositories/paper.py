@@ -3,6 +3,7 @@ from uuid import UUID
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+
 from ..db_models.models import Paper
 from ..schemas import PaperCreate
 
@@ -47,14 +48,24 @@ class PaperRepository:
 
     def get_unprocessed_papers(self, limit: int = 100, offset: int = 0) -> List[Paper]:
         """Get papers that haven't been processed for PDF content yet."""
-        stmt = select(Paper).where(Paper.pdf_processed is False).order_by(Paper.published_date.desc())\
-            .limit(limit).offset(offset)
+        stmt = (
+            select(Paper)
+            .where(Paper.pdf_processed is False)
+            .order_by(Paper.published_date.desc())
+            .limit(limit)
+            .offset(offset)
+        )
         return list(self.session.scalars(stmt))
 
     def get_papers_with_raw_text(self, limit: int = 100, offset: int = 0) -> List[Paper]:
         """Get papers that have raw text content stored."""
-        stmt = select(Paper).where(Paper.raw_text is not None).order_by(Paper.pdf_processing_date.desc())\
-            .limit(limit).offset(offset)
+        stmt = (
+            select(Paper)
+            .where(Paper.raw_text is not None)
+            .order_by(Paper.pdf_processing_date.desc())
+            .limit(limit)
+            .offset(offset)
+        )
         return list(self.session.scalars(stmt))
 
     def get_processing_stats(self) -> dict:
@@ -74,7 +85,9 @@ class PaperRepository:
             "processed_papers": processed_papers,
             "papers_with_text": papers_with_text,
             "processing_rate": (processed_papers / total_papers * 100) if total_papers > 0 else 0,
-            "text_extraction_rate": (papers_with_text / processed_papers * 100) if processed_papers > 0 else 0,
+            "text_extraction_rate": (papers_with_text / processed_papers * 100)
+            if processed_papers > 0
+            else 0,
         }
 
     def update(self, paper: Paper) -> Paper:

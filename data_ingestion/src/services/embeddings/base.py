@@ -6,8 +6,9 @@ class EmbeddingModel(ABC):
     """Abstract base class for embedding models."""
 
     @abstractmethod
-    def embed(self, text: str | List[str]) -> Union[List[List[int | float]],
-                                                    List[Dict[str, List[int | float]]]]:
+    def embed(
+        self, text: str | List[str]
+    ) -> Union[List[List[int | float]], List[Dict[str, List[int | float]]]]:
         """
         Generate embeddings for the given text.
 

@@ -6,8 +6,9 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
-from .base import BaseDatabase
+
 from ...config import PostgreSQLSettings
+from .base import BaseDatabase
 
 logger = logging.getLogger(__name__)
 

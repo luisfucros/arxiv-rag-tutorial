@@ -15,7 +15,13 @@ logger = logging.getLogger(__name__)
 class DoclingParser:
     """Docling PDF parser for scientific document processing."""
 
-    def __init__(self, max_pages: int, max_file_size_mb: int, do_ocr: bool = False, do_table_structure: bool = True):
+    def __init__(
+        self,
+        max_pages: int,
+        max_file_size_mb: int,
+        do_ocr: bool = False,
+        do_table_structure: bool = True,
+    ):
         """Initialize DocumentConverter with optimized pipeline options.
 
         :param max_pages: Maximum number of pages to process
@@ -30,7 +36,8 @@ class DoclingParser:
         )
 
         self._converter = DocumentConverter(
-            format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)})
+            format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)}
+        )
         self._warmed_up = False
         self.max_pages = max_pages
         self.max_file_size_bytes = max_file_size_mb * 1024 * 1024
@@ -82,7 +89,9 @@ class DoclingParser:
                     f"PDF has {actual_pages} pages, exceeding limit of {self.max_pages} pages. Skipping processing to\
                         avoid performance issues."
                 )
-                raise PDFValidationError(f"PDF has too many pages: {actual_pages} > {self.max_pages}")
+                raise PDFValidationError(
+                    f"PDF has too many pages: {actual_pages} > {self.max_pages}"
+                )
 
             return True
 
@@ -108,8 +117,9 @@ class DoclingParser:
 
             # Convert PDF using the modern API
             # Limit processing to avoid memory issues with large papers
-            result = self._converter.convert(str(pdf_path), max_num_pages=self.max_pages,
-                                             max_file_size=self.max_file_size_bytes)
+            result = self._converter.convert(
+                str(pdf_path), max_num_pages=self.max_pages, max_file_size=self.max_file_size_bytes
+            )
 
             # Extract structured content
             doc = result.document
@@ -122,8 +132,12 @@ class DoclingParser:
                 if hasattr(element, "label") and element.label in ["title", "section_header"]:
                     # Save previous section if it has content
                     if current_section["content"].strip():
-                        sections.append(PaperSection(title=current_section["title"],
-                                                     content=current_section["content"].strip()))
+                        sections.append(
+                            PaperSection(
+                                title=current_section["title"],
+                                content=current_section["content"].strip(),
+                            )
+                        )
                     # Start new section
                     current_section = {"title": element.text.strip(), "content": ""}
                 else:
@@ -133,8 +147,11 @@ class DoclingParser:
 
             # Add final section
             if current_section["content"].strip():
-                sections.append(PaperSection(title=current_section["title"],
-                                             content=current_section["content"].strip()))
+                sections.append(
+                    PaperSection(
+                        title=current_section["title"], content=current_section["content"].strip()
+                    )
+                )
 
             # Focus on what arXiv API doesn't provide: structured full text content only
             return PdfContent(
@@ -144,7 +161,10 @@ class DoclingParser:
                 raw_text=doc.export_to_text(),
                 references=[],
                 parser_used=ParserType.DOCLING,
-                metadata={"source": "docling", "note": "Content extracted from PDF, metadata comes from arXiv API"},
+                metadata={
+                    "source": "docling",
+                    "note": "Content extracted from PDF, metadata comes from arXiv API",
+                },
             )
 
         except PDFValidationError as e:
@@ -177,8 +197,10 @@ class DoclingParser:
                 logger.error("Out of memory - PDF may be too large or complex")
                 raise PDFParsingException(f"Out of memory processing PDF: {pdf_path}")
             elif "max_num_pages" in error_msg or "page" in error_msg:
-                logger.error(f"PDF processing issue likely related to page limits (current limit:\
-                    {self.max_pages} pages)")
+                logger.error(
+                    f"PDF processing issue likely related to page limits (current limit:\
+                    {self.max_pages} pages)"
+                )
                 raise PDFParsingException(
                     f"PDF processing failed, possibly due to page limit ({self.max_pages} pages). Error: {e}"
                 )

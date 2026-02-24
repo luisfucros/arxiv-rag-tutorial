@@ -1,7 +1,9 @@
+import functools
+
 from arxiv import HTTPError
 from requests.exceptions import ConnectionError
-from ..exceptions import EntityNotFound, ServiceNotAvailable
-import functools
+
+from ..exceptions import ServiceNotAvailable
 
 
 def handle_errors(func):

@@ -2,11 +2,10 @@ import logging
 from typing import Dict, List
 from uuid import uuid4
 
-from services.embeddings.inference import FastembedEmbeddingsClient
 from arxiv_lib.vector_db.qdrant import QdrantDB
+from services.embeddings.inference import FastembedEmbeddingsClient
 
 from .text_chunker import TextChunker
-
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +19,13 @@ class HybridIndexingService:
     3. Indexing chunks with embeddings into OpenSearch
     """
 
-    def __init__(self, chunker: TextChunker, embeddings_client: FastembedEmbeddingsClient,
-                 vector_db_client: QdrantDB, embedding_batch_size: int = 10):
+    def __init__(
+        self,
+        chunker: TextChunker,
+        embeddings_client: FastembedEmbeddingsClient,
+        vector_db_client: QdrantDB,
+        embedding_batch_size: int = 10,
+    ):
         """Initialize hybrid indexing service.
 
         :param chunker: Text chunking service
@@ -47,7 +51,12 @@ class HybridIndexingService:
 
         if not arxiv_id:
             logger.error("Paper missing arxiv_id")
-            return {"chunks_created": 0, "chunks_indexed": 0, "embeddings_generated": 0, "errors": 1}
+            return {
+                "chunks_created": 0,
+                "chunks_indexed": 0,
+                "embeddings_generated": 0,
+                "errors": 1,
+            }
 
         # Ensure collection exists before adding documents
         try:
@@ -58,7 +67,12 @@ class HybridIndexingService:
 
         if self.vector_db_client.content_exists(collection_name, {"arxiv_id": arxiv_id}) is True:
             logger.error("Paper already exists")
-            return {"chunks_created": 0, "chunks_indexed": 0, "embeddings_generated": 0, "errors": 0}
+            return {
+                "chunks_created": 0,
+                "chunks_indexed": 0,
+                "embeddings_generated": 0,
+                "errors": 0,
+            }
 
         try:
             # Step 1: Chunk the paper using hybrid section-based approach
@@ -73,7 +87,12 @@ class HybridIndexingService:
 
             if not chunks:
                 logger.warning(f"No chunks created for paper {arxiv_id}")
-                return {"chunks_created": 0, "chunks_indexed": 0, "embeddings_generated": 0, "errors": 0}
+                return {
+                    "chunks_created": 0,
+                    "chunks_indexed": 0,
+                    "embeddings_generated": 0,
+                    "errors": 0,
+                }
 
             logger.info(f"Created {len(chunks)} chunks for paper {arxiv_id}")
 
@@ -83,10 +102,11 @@ class HybridIndexingService:
             sparse_embeddings = []
 
             for i in range(0, len(chunk_texts), self.embedding_batch_size):
-                batch_texts = chunk_texts[i:i + self.embedding_batch_size]
+                batch_texts = chunk_texts[i : i + self.embedding_batch_size]
                 logger.info(
                     f"Processing embedding batch {i // self.embedding_batch_size + 1}, "
-                    f"texts: {len(batch_texts)}")
+                    f"texts: {len(batch_texts)}"
+                )
 
                 batch_dense = self.embeddings_client.generate_dense_embeddings(texts=batch_texts)
                 batch_sparse = self.embeddings_client.generate_sparse_embeddings(texts=batch_texts)
@@ -95,20 +115,33 @@ class HybridIndexingService:
                 sparse_embeddings.extend(batch_sparse)
 
             if len(dense_embeddings) != len(chunks):
-                logger.error(f"Dense embedding count mismatch: {len(dense_embeddings)} != {len(chunks)}")
-                return {"chunks_created": len(chunks), "chunks_indexed": 0,
-                        "embeddings_generated": len(dense_embeddings), "errors": 1}
+                logger.error(
+                    f"Dense embedding count mismatch: {len(dense_embeddings)} != {len(chunks)}"
+                )
+                return {
+                    "chunks_created": len(chunks),
+                    "chunks_indexed": 0,
+                    "embeddings_generated": len(dense_embeddings),
+                    "errors": 1,
+                }
 
             if len(sparse_embeddings) != len(chunks):
-                logger.error(f"Sparse embedding count mismatch: {len(sparse_embeddings)} != {len(chunks)}")
-                return {"chunks_created": len(chunks), "chunks_indexed": 0,
-                        "embeddings_generated": len(dense_embeddings), "errors": 1}
+                logger.error(
+                    f"Sparse embedding count mismatch: {len(sparse_embeddings)} != {len(chunks)}"
+                )
+                return {
+                    "chunks_created": len(chunks),
+                    "chunks_indexed": 0,
+                    "embeddings_generated": len(dense_embeddings),
+                    "errors": 1,
+                }
 
             # Step 3: Prepare chunks with embeddings for indexing
             chunks_with_embeddings = []
 
-            for chunk, dense_embedding, sparse_embedding in zip(chunks,
-                                                                dense_embeddings, sparse_embeddings):
+            for chunk, dense_embedding, sparse_embedding in zip(
+                chunks, dense_embeddings, sparse_embeddings
+            ):
                 # Prepare chunk data for OpenSearch
                 chunk_metadata = {
                     "arxiv_id": chunk.arxiv_id,
@@ -131,18 +164,22 @@ class HybridIndexingService:
                     "published_date": paper_data.get("published_date"),
                 }
 
-                chunks_with_embeddings.append({
-                    "id": str(uuid4()),
-                    "metadata": chunk_metadata,
-                    "dense_embedding": dense_embedding,
-                    "sparse_embedding": sparse_embedding})
+                chunks_with_embeddings.append(
+                    {
+                        "id": str(uuid4()),
+                        "metadata": chunk_metadata,
+                        "dense_embedding": dense_embedding,
+                        "sparse_embedding": sparse_embedding,
+                    }
+                )
 
             # Step 4: Index chunks into vector database in batches
             for j in range(0, len(chunks_with_embeddings), self.embedding_batch_size):
-                batch = chunks_with_embeddings[j:j + self.embedding_batch_size]
+                batch = chunks_with_embeddings[j : j + self.embedding_batch_size]
                 logger.info(
                     f"Indexing batch {j // self.embedding_batch_size + 1} with {len(batch)} "
-                    f"chunks to collection {collection_name}")
+                    f"chunks to collection {collection_name}"
+                )
                 self.vector_db_client.add_batch_docs(collection_name, batch, hybrid=True)
 
             logger.info(f"Indexed paper {arxiv_id}: success")
@@ -157,10 +194,16 @@ class HybridIndexingService:
 
         except Exception as e:
             logger.error(f"Error indexing paper {arxiv_id}: {e}")
-            return {"chunks_created": 0, "chunks_indexed": 0, "embeddings_generated": 0, "errors": 1}
+            return {
+                "chunks_created": 0,
+                "chunks_indexed": 0,
+                "embeddings_generated": 0,
+                "errors": 1,
+            }
 
-    def index_papers_batch(self, papers: List[Dict], collection_name: str,
-                           replace_existing: bool = False) -> Dict[str, int]:
+    def index_papers_batch(
+        self, papers: List[Dict], collection_name: str, replace_existing: bool = False
+    ) -> Dict[str, int]:
         """Index multiple papers in batch.
 
         :param papers: List of paper data
@@ -179,7 +222,11 @@ class HybridIndexingService:
             arxiv_id = paper.get("arxiv_id")
 
             # Optionally delete existing chunks
-            if replace_existing and arxiv_id and collection_name in self.vector_db_client.list_collections():
+            if (
+                replace_existing
+                and arxiv_id
+                and collection_name in self.vector_db_client.list_collections()
+            ):
                 self.vector_db_client.delete_doc(collection_name, "arxiv_id", arxiv_id)
                 logger.info(f"Deleted chunks for paper {arxiv_id}")
 

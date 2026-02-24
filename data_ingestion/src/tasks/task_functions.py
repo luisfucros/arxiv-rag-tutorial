@@ -1,15 +1,15 @@
 import logging
-from typing import List, Dict, Any, Union
+from typing import Any, Dict, List
 
-from tasks.celery_app import app
-from services.embeddings.fastembed import DenseEmbedding
-from services.embeddings.fastembed import SparseEmbedding
 from arxiv_lib.repositories.paper import PaperRepository
 from arxiv_lib.tasks.enums import TaskNames
-from arxiv_lib.tasks.schemas import PaperMetadataRequest, EmbeddingsRequest
-from . import fetcher, database, hybrid_chunker
+from arxiv_lib.tasks.schemas import EmbeddingsRequest, PaperMetadataRequest
 from config import settings
+from services.embeddings.fastembed import DenseEmbedding, SparseEmbedding
 
+from tasks.celery_app import app
+
+from . import database, fetcher, hybrid_chunker
 from .base import BaseTask
 
 logger = logging.getLogger(__name__)
@@ -19,13 +19,8 @@ dense_model = DenseEmbedding()
 sparse_model = SparseEmbedding()
 
 
-@app.task(
-    name=TaskNames.metadata_fetcher_task,
-    base=BaseTask
-)
-def fetch_and_process_papers_task(
-    params: Dict[str, Any]
-) -> Dict[str, Any]:
+@app.task(name=TaskNames.metadata_fetcher_task, base=BaseTask)
+def fetch_and_process_papers_task(params: Dict[str, Any]) -> Dict[str, Any]:
     """
     Celery task wrapper for MetadataFetcher.fetch_and_process_papers
 
@@ -78,15 +73,13 @@ def fetch_and_process_papers_task(
                 papers_data.append(paper_dict)
 
             vectordb_results = hybrid_chunker.index_papers_batch(
-                papers=papers_data,
-                collection_name=settings.collection_name,
-                replace_existing=True
+                papers=papers_data, collection_name=settings.collection_name, replace_existing=True
             )
 
         return {
             "db_results": db_results,
             "vectordb_results": vectordb_results,
-            "total_requested": len(fetcher_params.paper_ids)
+            "total_requested": len(fetcher_params.paper_ids),
         }
 
 
@@ -95,11 +88,9 @@ def fetch_and_process_papers_task(
     autoretry_for=(Exception,),
     retry_backoff=5,
     retry_kwargs={"max_retries": 3},
-    base=BaseTask
+    base=BaseTask,
 )
-def generate_dense_embedding(
-    params: Dict[str, Any]
-) -> Dict[str, List[List[float]]]:
+def generate_dense_embedding(params: Dict[str, Any]) -> Dict[str, List[List[float]]]:
     """
     Generate dense vector embeddings.
     """
@@ -116,11 +107,9 @@ def generate_dense_embedding(
     autoretry_for=(Exception,),
     retry_backoff=5,
     retry_kwargs={"max_retries": 3},
-    base=BaseTask
+    base=BaseTask,
 )
-def generate_sparse_embedding(
-    params: Dict[str, Any]
-) -> Dict[str, List[Dict[str, List[float]]]]:
+def generate_sparse_embedding(params: Dict[str, Any]) -> Dict[str, List[Dict[str, List[float]]]]:
     """
     Generate sparse vector embeddings.
     """

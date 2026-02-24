@@ -1,7 +1,6 @@
-from ..config import get_settings
+from ..config import PostgreSQLSettings, get_settings
 from .databases.base import BaseDatabase
 from .databases.postgresql import PostgreSQLDatabase
-from ..config import PostgreSQLSettings
 
 
 def make_database() -> BaseDatabase:

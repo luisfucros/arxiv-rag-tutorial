@@ -1,12 +1,13 @@
 import logging
+from datetime import datetime, timezone
+
+from arxiv_lib.db_models.enums import TaskStatus
+from arxiv_lib.db_models.models import ArxivTask
+from arxiv_lib.tasks.utils import make_json_safe
 from celery import Task
 from sqlalchemy import select
-from arxiv_lib.db_models.models import ArxivTask
-from arxiv_lib.db_models.enums import TaskStatus
-from datetime import datetime, timezone
-from . import database
-from arxiv_lib.tasks.utils import make_json_safe
 
+from . import database
 
 logger = logging.getLogger(__name__)
 
@@ -16,23 +17,12 @@ class BaseTask(Task):
     Base class for all Celery tasks in the service.
     """
 
-    def on_failure(
-            self,
-            exc: Exception,
-            task_id: str,
-            args: tuple,
-            kwargs: dict,
-            einfo):
+    def on_failure(self, exc: Exception, task_id: str, args: tuple, kwargs: dict, einfo):
         """
         Log the task failure in the DB.
         """
         err_type = type(exc)
-        logger.error(
-            "Task failed [%s]: %s",
-            task_id,
-            str(exc),
-            exc_info=True
-        )
+        logger.error("Task failed [%s]: %s", task_id, str(exc), exc_info=True)
         try:
             with database.get_session() as session:
                 query = select(ArxivTask).where(ArxivTask.task_id == task_id)
@@ -46,10 +36,7 @@ class BaseTask(Task):
                 session.commit()
 
         except Exception as e:
-            logger.exception(
-                "Failed to log task failure [%s]",
-                type(e).__name__
-            )
+            logger.exception("Failed to log task failure [%s]", type(e).__name__)
 
     def on_success(self, retval, task_id, args, kwargs):
         """
@@ -71,7 +58,4 @@ class BaseTask(Task):
                 session.commit()
 
         except Exception as e:
-            logger.exception(
-                "Failed to log task success [%s]",
-                type(e).__name__
-            )
+            logger.exception("Failed to log task success [%s]", type(e).__name__)

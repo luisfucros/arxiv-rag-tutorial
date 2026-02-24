@@ -3,15 +3,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from exceptions import MetadataFetchingException, PipelineException
-from arxiv_lib.repositories.paper import PaperRepository
-from arxiv_lib.schemas import PaperCreate
-from .s3_handler import S3Handler
 from arxiv_lib.arxiv.client import ArxivClient
 from arxiv_lib.config import Settings
 from arxiv_lib.exceptions import EntityNotFound
+from arxiv_lib.repositories.paper import PaperRepository
+from arxiv_lib.schemas import PaperCreate
+from exceptions import MetadataFetchingException, PipelineException
 from services.pdf_parser.parser import PDFParserService
 from sqlalchemy.orm import Session
+
+from .s3_handler import S3Handler
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +47,9 @@ class MetadataFetcher:
         self.pdf_parser = pdf_parser
         self.pdf_cache_dir = pdf_cache_dir or self.arxiv_client.pdf_cache_dir
         self.settings = settings or config_settings
-        self.object_storage = object_storage or S3Handler(bucket_name=self.settings.artifacts_buket,
-                                                          region_name="us-east-1")
+        self.object_storage = object_storage or S3Handler(
+            bucket_name=self.settings.artifacts_buket, region_name="us-east-1"
+        )
 
     def fetch_and_process_papers(
         self,
@@ -60,7 +62,9 @@ class MetadataFetcher:
         if store_to_db is True and db_session is None:
             raise PipelineException("db_session is required when store_to_db=True")
 
-        repo = PaperRepository(db_session) if store_to_db is True and db_session is not None else None
+        repo = (
+            PaperRepository(db_session) if store_to_db is True and db_session is not None else None
+        )
 
         results: Dict[str, Any] = {
             "requested": len(paper_ids),
@@ -76,11 +80,13 @@ class MetadataFetcher:
             try:
                 existing_paper = repo.get_by_arxiv_id(arxiv_id) if repo is not None else None
                 if existing_paper:
-                    results["skipped_papers"].append({
-                        "arxiv_id": arxiv_id,
-                        "reason": "already_processed",
-                        "id": str(existing_paper.id),
-                    })
+                    results["skipped_papers"].append(
+                        {
+                            "arxiv_id": arxiv_id,
+                            "reason": "already_processed",
+                            "id": str(existing_paper.id),
+                        }
+                    )
                     logger.info(f"Paper already stored: {arxiv_id}")
                 else:
                     try:
@@ -91,11 +97,13 @@ class MetadataFetcher:
                         if pdf_path is None and arxiv_paper is None:
                             raise MetadataFetchingException(f"Paper not found: {arxiv_id}")
                     except EntityNotFound:
-                        results["skipped_papers"].append({
-                            "arxiv_id": arxiv_id,
-                            "reason": "paper_not_found",
-                            "id": None,
-                        })
+                        results["skipped_papers"].append(
+                            {
+                                "arxiv_id": arxiv_id,
+                                "reason": "paper_not_found",
+                                "id": None,
+                            }
+                        )
                         logger.error(f"Paper not found: {arxiv_id}")
                         continue
 
@@ -122,14 +130,20 @@ class MetadataFetcher:
                                 pdf_content = self.pdf_parser.parse_pdf(pdf_path)
 
                                 if pdf_content:
-                                    paper_dict.update({
-                                        "raw_text": pdf_content.raw_text,
-                                        "sections": [s.model_dump() for s in pdf_content.sections],
-                                        "parser_used": pdf_content.parser_used.value,
-                                        "parser_metadata": pdf_content.metadata,
-                                        "pdf_processed": True,
-                                        "pdf_processing_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                    })
+                                    paper_dict.update(
+                                        {
+                                            "raw_text": pdf_content.raw_text,
+                                            "sections": [
+                                                s.model_dump() for s in pdf_content.sections
+                                            ],
+                                            "parser_used": pdf_content.parser_used.value,
+                                            "parser_metadata": pdf_content.metadata,
+                                            "pdf_processed": True,
+                                            "pdf_processing_date": datetime.now().strftime(
+                                                "%Y-%m-%d %H:%M:%S"
+                                            ),
+                                        }
+                                    )
                                     logger.info(f"PDF processed: {arxiv_id}")
                                     results["processed"] += 1
 

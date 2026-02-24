@@ -13,10 +13,19 @@ logger = logging.getLogger(__name__)
 class PDFParserService:
     """Main PDF parsing service using Docling only."""
 
-    def __init__(self, max_pages: int, max_file_size_mb: int, do_ocr: bool = False, do_table_structure: bool = True):
+    def __init__(
+        self,
+        max_pages: int,
+        max_file_size_mb: int,
+        do_ocr: bool = False,
+        do_table_structure: bool = True,
+    ):
         """Initialize PDF parser service with configurable limits."""
         self.docling_parser = DoclingParser(
-            max_pages=max_pages, max_file_size_mb=max_file_size_mb, do_ocr=do_ocr, do_table_structure=do_table_structure
+            max_pages=max_pages,
+            max_file_size_mb=max_file_size_mb,
+            do_ocr=do_ocr,
+            do_table_structure=do_table_structure,
         )
 
     def parse_pdf(self, pdf_path: Path) -> Optional[PdfContent]:

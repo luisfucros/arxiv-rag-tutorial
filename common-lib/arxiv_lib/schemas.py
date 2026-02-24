@@ -33,13 +33,21 @@ class PaperCreate(PaperBase):
 
     # Parsed PDF content (optional - added when PDF is processed)
     raw_text: Optional[str] = Field(None, description="Full raw text extracted from PDF")
-    sections: Optional[List[Dict[str, Any]]] = Field(None, description="List of sections with titles and content")
-    references: Optional[List[Dict[str, Any]]] = Field(None, description="List of references if extracted")
+    sections: Optional[List[Dict[str, Any]]] = Field(
+        None, description="List of sections with titles and content"
+    )
+    references: Optional[List[Dict[str, Any]]] = Field(
+        None, description="List of references if extracted"
+    )
 
     # PDF processing metadata (optional)
     parser_used: Optional[str] = Field(None, description="Which parser was used (DOCLING, etc.)")
-    parser_metadata: Optional[Dict[str, Any]] = Field(None, description="Additional parser metadata")
-    pdf_processed: Optional[bool] = Field(False, description="Whether PDF was successfully processed")
+    parser_metadata: Optional[Dict[str, Any]] = Field(
+        None, description="Additional parser metadata"
+    )
+    pdf_processed: Optional[bool] = Field(
+        False, description="Whether PDF was successfully processed"
+    )
     pdf_processing_date: Optional[datetime] = Field(None, description="When PDF was processed")
 
 
@@ -50,12 +58,18 @@ class PaperResponse(PaperBase):
 
     # Parsed PDF content (optional fields)
     raw_text: Optional[str] = Field(None, description="Full raw text extracted from PDF")
-    sections: Optional[List[Dict[str, Any]]] = Field(None, description="List of sections with titles and content")
-    references: Optional[List[Dict[str, Any]]] = Field(None, description="List of references if extracted")
+    sections: Optional[List[Dict[str, Any]]] = Field(
+        None, description="List of sections with titles and content"
+    )
+    references: Optional[List[Dict[str, Any]]] = Field(
+        None, description="List of references if extracted"
+    )
 
     # PDF processing metadata
     parser_used: Optional[str] = Field(None, description="Which parser was used")
-    parser_metadata: Optional[Dict[str, Any]] = Field(None, description="Additional parser metadata")
+    parser_metadata: Optional[Dict[str, Any]] = Field(
+        None, description="Additional parser metadata"
+    )
     pdf_processed: bool = Field(False, description="Whether PDF was successfully processed")
     pdf_processing_date: Optional[datetime] = Field(None, description="When PDF was processed")
 

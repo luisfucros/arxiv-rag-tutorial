@@ -5,10 +5,11 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 import arxiv
-from ..config import ArxivSettings
-from ..schemas import ArxivPaper
 from arxiv import HTTPError
+
+from ..config import ArxivSettings
 from ..exceptions import EntityNotFound
+from ..schemas import ArxivPaper
 from .errors import handle_errors
 
 
@@ -18,15 +19,19 @@ class ArxivClient:
     Handles paper search, retrieval, and PDF downloads with caching.
     Provides rate limiting and configurable pagination.
     """
+
     # Default configuration constants
     DEFAULT_PAGE_SIZE = 10
     DEFAULT_DELAY_SECONDS = 3
     DEFAULT_NUM_RETRIES = 3
 
-    def __init__(self, settings: ArxivSettings,
-                 page_size: int = DEFAULT_PAGE_SIZE,
-                 delay_seconds: int = DEFAULT_DELAY_SECONDS,
-                 num_retries: int = DEFAULT_NUM_RETRIES) -> None:
+    def __init__(
+        self,
+        settings: ArxivSettings,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        delay_seconds: int = DEFAULT_DELAY_SECONDS,
+        num_retries: int = DEFAULT_NUM_RETRIES,
+    ) -> None:
         """
         Initialize a reusable arxiv.Client.
         You can tune page size and delay to control pagination & rate limiting.
@@ -52,9 +57,7 @@ class ArxivClient:
             raise ValueError(f"pdf_cache_dir must be a directory: {cache_path}")
 
         self.client = arxiv.Client(
-            page_size=page_size,
-            delay_seconds=delay_seconds,
-            num_retries=num_retries
+            page_size=page_size, delay_seconds=delay_seconds, num_retries=num_retries
         )
 
     @cached_property
@@ -112,7 +115,8 @@ class ArxivClient:
             sort_order=sort_order,
         )
 
-        papers = [ArxivPaper(
+        papers = [
+            ArxivPaper(
                 arxiv_id=paper.entry_id,
                 title=paper.title,
                 authors=[author.name for author in paper.authors],
@@ -120,7 +124,9 @@ class ArxivClient:
                 categories=paper.categories,
                 published_date=paper.published,
                 pdf_url=paper.pdf_url,
-            ) for paper in list(self.client.results(search))]
+            )
+            for paper in list(self.client.results(search))
+        ]
 
         return papers
 
@@ -152,9 +158,7 @@ class ArxivClient:
                 )
                 return paper, result
         except HTTPError:
-            raise EntityNotFound(
-                "Paper with id: '%s' not found" % arxiv_id
-            )
+            raise EntityNotFound("Paper with id: '%s' not found" % arxiv_id)
 
         return None, None
 

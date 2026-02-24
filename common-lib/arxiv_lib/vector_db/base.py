@@ -34,8 +34,13 @@ class VectorDB(ABC):
         pass
 
     @abstractmethod
-    def add_doc(self, collection_name: str, doc_id: str, vector: List[float],
-                metadata: Optional[Dict[str, Any]] = None) -> None:
+    def add_doc(
+        self,
+        collection_name: str,
+        doc_id: str,
+        vector: List[float],
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """Add a single document to a collection.
 
         Args:
@@ -67,7 +72,9 @@ class VectorDB(ABC):
         pass
 
     @abstractmethod
-    def search_docs(self, collection_name: str, query_vector: List[float], limit: int = 10) -> List[Dict[str, Any]]:
+    def search_docs(
+        self, collection_name: str, query_vector: List[float], limit: int = 10
+    ) -> List[Dict[str, Any]]:
         """Search for similar documents in a collection.
 
         Args:

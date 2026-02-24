@@ -80,9 +80,13 @@ class TextChunker:
         # Try section-based chunking first
         if sections:
             try:
-                section_chunks = self._chunk_by_sections(title, abstract, arxiv_id, paper_id, sections)
+                section_chunks = self._chunk_by_sections(
+                    title, abstract, arxiv_id, paper_id, sections
+                )
                 if section_chunks:
-                    logger.info(f"Created {len(section_chunks)} section-based chunks for {arxiv_id}")
+                    logger.info(
+                        f"Created {len(section_chunks)} section-based chunks for {arxiv_id}"
+                    )
                     return section_chunks
             except Exception as e:
                 logger.warning(f"Section-based chunking failed for {arxiv_id}: {e}")
@@ -107,8 +111,10 @@ class TextChunker:
         words = self._split_into_words(text)
 
         if len(words) < self.min_chunk_size:
-            logger.warning(f"Text for paper {arxiv_id} has only {len(words)} words,\
-                less than minimum {self.min_chunk_size}")
+            logger.warning(
+                f"Text for paper {arxiv_id} has only {len(words)} words,\
+                less than minimum {self.min_chunk_size}"
+            )
             # Return single chunk if text is too small
             if words:
                 return [
@@ -179,7 +185,12 @@ class TextChunker:
         return chunks
 
     def _chunk_by_sections(
-        self, title: str, abstract: str, arxiv_id: str, paper_id: str, sections: Union[Dict[str, str], str, list]
+        self,
+        title: str,
+        abstract: str,
+        arxiv_id: str,
+        paper_id: str,
+        sections: Union[Dict[str, str], str, list],
     ) -> List[TextChunk]:
         """Implement hybrid section-based chunking strategy.
 
@@ -220,13 +231,19 @@ class TextChunker:
 
                 # If this is the last section or next section is large, process accumulated small sections
                 if i == len(section_items) - 1 or len(str(section_items[i + 1][1]).split()) >= 100:
-                    chunks.extend(self._create_combined_chunk(header, small_sections, chunks, arxiv_id, paper_id))
+                    chunks.extend(
+                        self._create_combined_chunk(
+                            header, small_sections, chunks, arxiv_id, paper_id
+                        )
+                    )
                     small_sections = []
 
             elif 100 <= section_words <= 800:
                 # Perfect size - create single chunk
                 chunk_text = f"{header}Section: {section_title}\n\n{content_str}"
-                chunk = self._create_section_chunk(chunk_text, section_title, len(chunks), arxiv_id, paper_id)
+                chunk = self._create_section_chunk(
+                    chunk_text, section_title, len(chunks), arxiv_id, paper_id
+                )
                 chunks.append(chunk)
 
             else:
@@ -383,7 +400,9 @@ class TextChunker:
         # If content is mostly metadata patterns
         word_count = len(content.split())
         if word_count < 30:  # Short content
-            metadata_word_count = sum(1 for pattern in metadata_patterns if pattern in content_lower)
+            metadata_word_count = sum(
+                1 for pattern in metadata_patterns if pattern in content_lower
+            )
             if metadata_word_count >= 2:  # Contains multiple metadata indicators
                 return True
 
@@ -435,7 +454,9 @@ class TextChunker:
         if len(sections_titles) > 3:
             combined_title += f" + {len(sections_titles) - 3} more"
 
-        chunk = self._create_section_chunk(combined_text, combined_title, len(existing_chunks), arxiv_id, paper_id)
+        chunk = self._create_section_chunk(
+            combined_text, combined_title, len(existing_chunks), arxiv_id, paper_id
+        )
         return [chunk]
 
     def _create_section_chunk(
@@ -458,12 +479,17 @@ class TextChunker:
         )
 
     def _split_large_section(
-        self, full_section_text: str, header: str, section_title: str,
-        base_chunk_index: int, arxiv_id: str, paper_id: str
+        self,
+        full_section_text: str,
+        header: str,
+        section_title: str,
+        base_chunk_index: int,
+        arxiv_id: str,
+        paper_id: str,
     ) -> List[TextChunk]:
         """Split large sections using traditional word-based chunking."""
         # Remove header from section text for chunking, then add back to each chunk
-        section_only = full_section_text[len(header):]
+        section_only = full_section_text[len(header) :]
 
         # Use traditional chunking on section content
         traditional_chunks = self.chunk_text(section_only, arxiv_id, paper_id)

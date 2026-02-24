@@ -1,12 +1,12 @@
-from config import settings
 from arxiv_lib.arxiv.client import ArxivClient
 from arxiv_lib.db.factory import make_database
-from services.pdf_parser.parser import PDFParserService
-from services.embeddings.inference import FastembedEmbeddingsClient
 from arxiv_lib.vector_db.qdrant import QdrantDB
-from services.indexing.text_chunker import TextChunker
+from config import settings
+from services.embeddings.inference import FastembedEmbeddingsClient
 from services.indexing.hybrid_indexer import HybridIndexingService
+from services.indexing.text_chunker import TextChunker
 from services.metadata_fetcher import MetadataFetcher
+from services.pdf_parser.parser import PDFParserService
 
 
 def get_services():
