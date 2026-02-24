@@ -133,7 +133,10 @@ class Settings(BaseConfigSettings):
     localstack_host: str = "localstack:4566"
 
     algorithm: str = "HS256"
-    secret_key: str = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
+    secret_key: str = Field(
+        default="changeme",
+        description="JWT signing key; MUST be overridden in non-local environments.",
+    )
     access_token_expire_minutes: int = 60
 
     arxiv: ArxivSettings = Field(default_factory=ArxivSettings)

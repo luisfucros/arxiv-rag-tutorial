@@ -21,7 +21,13 @@ class TaskService:
 
         return result.task_id
 
-    def run_task(self, task_name: TaskNames, params: Dict[str, Any], owner_id: int) -> Any:
+    def run_task(
+        self,
+        task_name: TaskNames,
+        params: Dict[str, Any],
+        owner_id: int,
+        timeout: float | None = 30.0,
+    ) -> Any:
         log = self.repository.create(task_name, params, owner_id)
 
         result = self.celery_client.send_task(
@@ -30,7 +36,10 @@ class TaskService:
             kwargs={"params": params},
         )
 
-        output = result.get()
+        if timeout is not None:
+            output = result.get(timeout=timeout)
+        else:
+            output = result.get()
         result.forget()  # Clear space on Redis
 
         return output

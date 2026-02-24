@@ -12,6 +12,10 @@ from arxiv_lib.exceptions import (
 from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 
@@ -37,14 +41,14 @@ def arxiv_error_handler(request, exc):
 
     if isinstance(exc, EntityNotFound):
         status_code = status.HTTP_404_NOT_FOUND
-    if isinstance(exc, EntityAlreadyExists) or isinstance(exc, ConflictError):
+    elif isinstance(exc, (EntityAlreadyExists, ConflictError)):
         status_code = status.HTTP_409_CONFLICT
     elif isinstance(exc, HTTPError):
         status_code = status.HTTP_429_TOO_MANY_REQUESTS
     elif isinstance(exc, ServiceNotAvailable):
         status_code = status.HTTP_503_SERVICE_UNAVAILABLE
 
-    logger.error("ArxivServiceError [%s]: %s", type(exc).__name__, str(exc), exc_info=True)
+    logger.error("ArxivError [%s]: %s", type(exc).__name__, str(exc), exc_info=True)
 
     return JSONResponse(
         status_code=status_code,

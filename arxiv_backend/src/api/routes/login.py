@@ -30,7 +30,7 @@ def login_access_token(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Credentials")
 
     if updated_password_hash:
-        user.hashed_password = updated_password_hash
+        user.password = updated_password_hash
         session.add(user)
         session.commit()
         session.refresh(user)

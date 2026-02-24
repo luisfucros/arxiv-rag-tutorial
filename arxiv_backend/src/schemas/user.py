@@ -9,7 +9,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     full_name: Optional[str] = None
-    role: str = "user"
+    role: UserRoles = UserRoles.user
 
 
 class UserOut(BaseModel):
