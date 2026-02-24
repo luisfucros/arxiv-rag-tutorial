@@ -7,7 +7,6 @@ from typing import Any, Dict, Optional
 import redis
 from arxiv_lib.config import RedisSettings
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -21,9 +20,7 @@ class CacheClient:
 
     def _generate_cache_key(self, query: str) -> str:
         """Generate exact cache key based on request query."""
-        key_data = {
-            "query": query
-        }
+        key_data = {"query": query}
         key_string = json.dumps(key_data, sort_keys=True)
         key_hash = hashlib.sha256(key_string.encode()).hexdigest()[:16]
         return f"exact_cache:{key_hash}"
@@ -39,7 +36,7 @@ class CacheClient:
             if cached_response:
                 try:
                     response_data = json.loads(cached_response)
-                    logger.info(f"Cache hit for exact query match")
+                    logger.info("Cache hit for exact query match")
                     return response_data
                 except json.JSONDecodeError as e:
                     logger.warning(f"Failed to deserialize cached response: {e}")
@@ -63,7 +60,7 @@ class CacheClient:
                 logger.info(f"Stored response in exact cache with key {cache_key[:16]}...")
                 return True
             else:
-                logger.warning(f"Failed to store response in cache")
+                logger.warning("Failed to store response in cache")
                 return False
 
         except Exception as e:

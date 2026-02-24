@@ -1,9 +1,8 @@
 from typing import Any, Dict
 
+from arxiv_lib.tasks.enums import TaskNames
 from clients.celery_client import CeleryClient
 from repositories.tasks import TaskRepository
-from sqlalchemy.orm import Session
-from arxiv_lib.tasks.enums import TaskNames
 
 
 class TaskService:
@@ -11,8 +10,7 @@ class TaskService:
         self.repository = repository
         self.celery_client = celery_client
 
-    def async_task(self, task_name: TaskNames, params: Dict[str, Any],
-                   owner_id: int) -> str:
+    def async_task(self, task_name: TaskNames, params: Dict[str, Any], owner_id: int) -> str:
         log = self.repository.create(task_name, params, owner_id)
 
         result = self.celery_client.send_task(
@@ -23,8 +21,7 @@ class TaskService:
 
         return result.task_id
 
-    def run_task(self, task_name: TaskNames, params: Dict[str, Any],
-                 owner_id: int) -> Any:
+    def run_task(self, task_name: TaskNames, params: Dict[str, Any], owner_id: int) -> Any:
         log = self.repository.create(task_name, params, owner_id)
 
         result = self.celery_client.send_task(

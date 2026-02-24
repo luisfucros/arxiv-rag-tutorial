@@ -1,10 +1,9 @@
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
 
+from arxiv_lib.db_models.models import ChatMessage, ChatSession
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, selectinload
-from sqlalchemy import select, delete
-
-from arxiv_lib.db_models.models import ChatSession, ChatMessage
 
 
 class ChatRepository:
@@ -16,10 +15,7 @@ class ChatRepository:
     # =====================================================
 
     def create_session(
-        self,
-        owner_id: int,
-        session_id: UUID,
-        title: Optional[str] = None
+        self, owner_id: int, session_id: UUID, title: Optional[str] = None
     ) -> ChatSession:
         session = ChatSession(
             id=session_id,
@@ -68,11 +64,7 @@ class ChatRepository:
         result = self.db.execute(stmt)
         return list(result.scalars().all())
 
-    def delete_session(
-        self,
-        session_id: UUID,
-        owner_id: int
-    ) -> None:
+    def delete_session(self, session_id: UUID, owner_id: int) -> None:
         stmt = delete(ChatSession).where(
             ChatSession.id == session_id,
             ChatSession.owner_id == owner_id,
@@ -87,11 +79,7 @@ class ChatRepository:
     # =====================================================
 
     def create_message(
-        self,
-        session_id: UUID,
-        role: str,
-        content: str,
-        message_metadata: Optional[dict] = None
+        self, session_id: UUID, role: str, content: str, message_metadata: Optional[dict] = None
     ) -> ChatMessage:
         message = ChatMessage(
             session_id=session_id,
@@ -124,13 +112,8 @@ class ChatRepository:
         result = self.db.execute(stmt)
         return list(result.scalars().all())
 
-    def delete_messages_by_session(
-        self,
-        session_id: UUID
-    ) -> None:
-        stmt = delete(ChatMessage).where(
-            ChatMessage.session_id == session_id
-        )
+    def delete_messages_by_session(self, session_id: UUID) -> None:
+        stmt = delete(ChatMessage).where(ChatMessage.session_id == session_id)
 
         self.db.execute(stmt)
 

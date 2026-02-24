@@ -1,7 +1,8 @@
-from pydantic import BaseModel, ConfigDict, EmailStr
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
 from arxiv_lib.db_models.enums import UserRoles
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class UserCreate(BaseModel):

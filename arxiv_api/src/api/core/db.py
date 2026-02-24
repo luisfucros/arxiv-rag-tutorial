@@ -1,7 +1,7 @@
 from typing import Generator
-from sqlalchemy.orm import Session
 
 from arxiv_lib.db.factory import make_database
+from sqlalchemy.orm import Session
 
 db = make_database()
 

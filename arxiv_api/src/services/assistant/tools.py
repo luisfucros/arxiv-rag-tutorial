@@ -38,5 +38,5 @@ TOOLS = [
                 "additionalProperties": False,
             },
         },
-    }
+    },
 ]

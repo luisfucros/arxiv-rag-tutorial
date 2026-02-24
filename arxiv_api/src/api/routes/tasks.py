@@ -1,16 +1,15 @@
 import asyncio
 import json
-from services.builders import celery_app
+from typing import List
+
+from api.dependencies import get_current_user, get_task_service
+from arxiv_lib.tasks.utils import make_json_safe
+from celery.result import AsyncResult
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
-from schemas.metadata import TaskStatusResponse, TaskResponse
-from celery.result import AsyncResult
-from api.dependencies import get_task_service
+from schemas.metadata import TaskResponse, TaskStatusResponse
+from services.builders import celery_app
 from services.tasks import TaskService
-from typing import List
-from arxiv_lib.tasks.utils import make_json_safe
-from api.dependencies import get_current_user
-
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"], dependencies=[Depends(get_current_user)])
 
@@ -29,17 +28,16 @@ def get_task_status(task_id: str):
 @router.get("/", response_model=List[TaskStatusResponse])
 def list_tasks(task_service: TaskService = Depends(get_task_service)):
     tasks = task_service.get_tasks()
-    return [
-        TaskStatusResponse(task_id=t.task_id, status=t.status, result=None)
-        for t in tasks
-    ]
+    return [TaskStatusResponse(task_id=t.task_id, status=t.status, result=None) for t in tasks]
 
 
 @router.get("/{task_id}", response_model=TaskStatusResponse)
 def get_task(task_id: str, task_service: TaskService = Depends(get_task_service)):
     task = task_service.get_task(task_id)
     if not task:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"task with id {task_id} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"task with id {task_id} not found"
+        )
     return TaskStatusResponse(task_id=task.task_id, status=task.status, result=None)
 
 
@@ -62,6 +60,7 @@ async def stream_task_status(
     This endpoint connects to a task and streams status updates as they change.
     The stream will close when the task completes (success, failure, or revoked).
     """
+
     async def event_generator():
         last_status = None
         max_retries = 300
@@ -71,7 +70,7 @@ async def stream_task_status(
             try:
                 task = task_service.get_task(task_id)
                 if not task:
-                    yield f"event: error\ndata: {{\"error\": \"Task not found\"}}\n\n"
+                    yield 'event: error\ndata: {"error": "Task not found"}\n\n'
                     break
 
                 celery_result = AsyncResult(task_id, app=celery_app)
@@ -79,7 +78,9 @@ async def stream_task_status(
                 current_status = {
                     "task_id": task.task_id,
                     "status": celery_result.state,
-                    "db_status": task.status.value if hasattr(task.status, 'value') else str(task.status),
+                    "db_status": task.status.value
+                    if hasattr(task.status, "value")
+                    else str(task.status),
                     "result": celery_result.result if celery_result.ready() else None,
                 }
 
@@ -88,7 +89,7 @@ async def stream_task_status(
                     last_status = current_status
 
                 if celery_result.state in ["SUCCESS", "FAILURE", "REVOKED", "REJECTED"]:
-                    yield f"event: close\ndata: {{\"message\": \"Task completed with status {celery_result.state}\"}}\n\n"
+                    yield f'event: close\ndata: {{"message": "Task completed with status {celery_result.state}"}}\n\n'
                     break
 
                 # Wait before next poll
@@ -96,11 +97,11 @@ async def stream_task_status(
                 retry_count += 1
 
             except Exception as exc:
-                yield f"event: error\ndata: {{\"error\": \"{str(exc)}\"}}\n\n"
+                yield f'event: error\ndata: {{"error": "{str(exc)}"}}\n\n'
                 break
 
         if retry_count >= max_retries:
-            yield f"event: timeout\ndata: {{\"message\": \"Task monitoring timeout\"}}\n\n"
+            yield 'event: timeout\ndata: {"message": "Task monitoring timeout"}\n\n'
 
     return StreamingResponse(
         event_generator(),

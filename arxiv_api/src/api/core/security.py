@@ -2,11 +2,10 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import jwt
+from config import settings
 from pwdlib import PasswordHash
 from pwdlib.hashers.argon2 import Argon2Hasher
 from pwdlib.hashers.bcrypt import BcryptHasher
-
-from config import settings
 
 password_hash = PasswordHash(
     (
@@ -23,9 +22,7 @@ def create_access_token(subject: str | Any, expires_delta: timedelta) -> str:
     return encoded_jwt
 
 
-def verify_password(
-    plain_password: str, hashed_password: str
-) -> tuple[bool, str | None]:
+def verify_password(plain_password: str, hashed_password: str) -> tuple[bool, str | None]:
     return password_hash.verify_and_update(plain_password, hashed_password)
 
 

@@ -1,29 +1,27 @@
-from arxiv_lib.repositories.paper import PaperRepository
+from typing import Annotated
+
+import jwt
+from api.core.db import get_db
+from api.handlers.instances import redis_client, redis_settings
 from arxiv_lib.db_models import models
 from arxiv_lib.db_models.enums import UserRoles
-from typing import Annotated
-from services.assistant.client import ArxivAssistant
-from services.cache import CacheClient
-from api.handlers.instances import redis_client, redis_settings
-from api.core.db import get_db
+from arxiv_lib.repositories.paper import PaperRepository
+from config import settings
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from pydantic import ValidationError
-from repositories.tasks import TaskRepository
 from repositories.chat_history import ChatRepository
+from repositories.tasks import TaskRepository
+from schemas.user import TokenPayload, UserOut
+from services.assistant.client import ArxivAssistant
 from services.builders import celery_client, openai_client, vector_db_client
+from services.cache import CacheClient
 from services.search import SearchEngineService
 from services.tasks import TaskService
 from sqlalchemy.orm import Session
-from schemas.user import TokenPayload, UserOut
-from config import settings
-import jwt
 
-
-oauth2_schema = OAuth2PasswordBearer(
-    tokenUrl="login"
-)
+oauth2_schema = OAuth2PasswordBearer(tokenUrl="login")
 
 SessionDep = Annotated[Session, Depends(get_db)]
 TokenDep = Annotated[str, Depends(oauth2_schema)]
@@ -31,9 +29,7 @@ TokenDep = Annotated[str, Depends(oauth2_schema)]
 
 def get_current_user(session: SessionDep, token: TokenDep) -> UserOut:
     try:
-        payload = jwt.decode(
-            token, settings.secret_key, algorithms=[settings.algorithm]
-        )
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
         token_data = TokenPayload(**payload)
     except (InvalidTokenError, ValidationError):
         raise HTTPException(
@@ -51,9 +47,7 @@ CurrentUser = Annotated[UserOut, Depends(get_current_user)]
 
 def get_current_admin(current_user: CurrentUser) -> UserOut:
     if current_user.role != UserRoles.admin:
-        raise HTTPException(
-            status_code=403, detail="The user doesn't have enough privileges"
-        )
+        raise HTTPException(status_code=403, detail="The user doesn't have enough privileges")
     return current_user
 
 
@@ -64,10 +58,7 @@ def get_redis_client():
 def get_cache(
     client=Depends(get_redis_client),
 ) -> CacheClient:
-    return CacheClient(
-        redis_client=client,
-        settings=redis_settings
-    )
+    return CacheClient(redis_client=client, settings=redis_settings)
 
 
 def get_paper_repo(
@@ -107,7 +98,7 @@ def get_arxiv_assistant(
     search_engine: SearchEngineService = Depends(get_search_engine_service),
     paper_repo: PaperRepository = Depends(get_paper_repo),
     chat_repo: ChatRepository = Depends(get_chat_repo),
-    cache: CacheClient = Depends(get_cache)
+    cache: CacheClient = Depends(get_cache),
 ) -> ArxivAssistant:
     return ArxivAssistant(
         search_engine=search_engine,

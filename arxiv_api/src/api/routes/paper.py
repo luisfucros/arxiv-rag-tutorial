@@ -1,9 +1,7 @@
-from api.dependencies import get_paper_repo
+from api.dependencies import get_current_user, get_paper_repo
 from arxiv_lib.repositories.paper import PaperRepository
 from arxiv_lib.schemas import PaperResponse, PaperSearchResponse
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from api.dependencies import get_current_user
-
 
 router = APIRouter(prefix="/paper", tags=["Paper"], dependencies=[Depends(get_current_user)])
 
@@ -12,8 +10,7 @@ router = APIRouter(prefix="/paper", tags=["Paper"], dependencies=[Depends(get_cu
 def get_paper(arxiv_id: str, paper_repository: PaperRepository = Depends(get_paper_repo)):
     paper = paper_repository.get_by_arxiv_id(arxiv_id)
     if not paper:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="Paper not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Paper not found")
     return paper
 
 

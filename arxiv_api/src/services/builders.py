@@ -1,9 +1,8 @@
-from config import settings
+from arxiv_lib.vector_db.qdrant import QdrantDB
 from celery import Celery
 from clients.celery_client import CeleryClient
-from arxiv_lib.vector_db.qdrant import QdrantDB
+from config import settings
 from openai import OpenAI
-
 
 CELERY_BROKER_URL = settings.celery_broker_url
 CELERY_BACKEND_URL = settings.celery_backend_url

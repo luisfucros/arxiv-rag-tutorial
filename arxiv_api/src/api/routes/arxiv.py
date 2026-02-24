@@ -1,13 +1,12 @@
 import logging
 from typing import List
 
+from api.dependencies import get_current_user
 from api.handlers.instances import arxiv_client
 from arxiv_lib.schemas import ArxivPaper
-from schemas.arxiv import PaperRequest
 from config import settings
 from fastapi import APIRouter, Depends
-from api.dependencies import get_current_user
-
+from schemas.arxiv import PaperRequest
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +16,9 @@ router = APIRouter(prefix="/arxiv", tags=["Arxiv"], dependencies=[Depends(get_cu
 @router.post("/search-paper", response_model=List[ArxivPaper])
 def search_paper(paper_request: PaperRequest):
     logger.info("Searching arXiv for query: %s", paper_request.query)
-    papers = arxiv_client.search_papers(query=paper_request.query, max_results=settings.arxiv.max_results)
+    papers = arxiv_client.search_papers(
+        query=paper_request.query, max_results=settings.arxiv.max_results
+    )
     logger.info("Found %d papers for query: %s", len(papers), paper_request.query)
     return papers
 

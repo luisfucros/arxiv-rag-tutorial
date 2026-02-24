@@ -1,22 +1,19 @@
-from sqlalchemy.orm import Session
-from typing import Any, Dict, List, Optional
 import uuid
-from arxiv_lib.db_models.models import ArxivTask
+from typing import Any, Dict, List, Optional
+
 from arxiv_lib.db_models.enums import TaskStatus
-from arxiv_lib.exceptions import EntityNotFound, ConflictError
+from arxiv_lib.db_models.models import ArxivTask
+from arxiv_lib.exceptions import ConflictError, EntityNotFound
+from sqlalchemy.orm import Session
 
 
 class TaskRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    def create(self, task_name: str, parameters: Dict[str, Any],
-               owner_id: int) -> ArxivTask:
+    def create(self, task_name: str, parameters: Dict[str, Any], owner_id: int) -> ArxivTask:
         task = ArxivTask(
-            task_id=str(uuid.uuid4()),
-            task_type=task_name,
-            parameters=parameters,
-            owner_id=owner_id
+            task_id=str(uuid.uuid4()), task_type=task_name, parameters=parameters, owner_id=owner_id
         )
         self.session.add(task)
         self.session.commit()

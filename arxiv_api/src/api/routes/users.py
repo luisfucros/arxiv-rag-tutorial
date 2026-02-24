@@ -1,9 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from arxiv_lib.db_models import models
-
-from schemas.user import UserCreate, UserOut
 from api.core import security
 from api.dependencies import SessionDep
+from arxiv_lib.db_models import models
+from fastapi import APIRouter
+from schemas.user import UserCreate, UserOut
 
 router = APIRouter(prefix="/users", tags=["User"])
 

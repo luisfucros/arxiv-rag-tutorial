@@ -1,18 +1,17 @@
 import json
 import logging
 from typing import Any, Dict, Generator, List, Optional
-
-from openai import OpenAI
-from services.search import SearchEngineService
-from services.cache import CacheClient
-from repositories.chat_history import ChatRepository
 from uuid import UUID
+
+from arxiv_lib.repositories.paper import PaperRepository
+from openai import OpenAI
+from repositories.chat_history import ChatRepository
+from services.cache import CacheClient
+from services.search import SearchEngineService
+from utils import paper_to_dict
 
 from .prompts import SYSTEM_PROMPT
 from .tools import TOOLS
-from arxiv_lib.repositories.paper import PaperRepository
-from utils import paper_to_dict
-
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +76,6 @@ class ArxivAssistant:
         messages = self._build_messages(chat_history)
 
         for _ in range(max_rounds):
-
             stream = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
@@ -118,7 +116,9 @@ class ArxivAssistant:
                                 tool_call["function"]["name"] = tool_call_delta.function.name
 
                             if tool_call_delta.function.arguments:
-                                tool_call["function"]["arguments"] += tool_call_delta.function.arguments
+                                tool_call["function"]["arguments"] += (
+                                    tool_call_delta.function.arguments
+                                )
 
             collected_tool_calls = list(tool_calls_by_index.values())
             # If no tool calls → done streaming
@@ -187,14 +187,15 @@ class ArxivAssistant:
         messages = self._build_messages(chat_history)
 
         for _ in range(max_rounds):
-
             response = self._create_completion(messages)
             assistant_message = response.choices[0].message
 
             messages.append(assistant_message)
 
             if not assistant_message.tool_calls:
-                self.chat_repo.create_message(session_id, "assistant", assistant_message.content or "")
+                self.chat_repo.create_message(
+                    session_id, "assistant", assistant_message.content or ""
+                )
                 if self.cache:
                     try:
                         self.cache.store_response(user_query, assistant_message.content or "")
@@ -202,11 +203,7 @@ class ArxivAssistant:
                         logger.warning(f"Failed to store response in cache: {e}")
                 return assistant_message.content or ""
 
-            self._execute_tool_calls(
-                assistant_message.tool_calls,
-                messages,
-                user_id=user_id
-            )
+            self._execute_tool_calls(assistant_message.tool_calls, messages, user_id=user_id)
 
         # Safety fallback (if max rounds reached)
         response = self._create_completion(messages)
@@ -230,10 +227,7 @@ class ArxivAssistant:
         )
 
     def _execute_tool_calls(
-        self,
-        tool_calls: List[Any],
-        messages: List[Dict[str, Any]],
-        user_id: int
+        self, tool_calls: List[Any], messages: List[Dict[str, Any]], user_id: int
     ) -> None:
         for tool_call in tool_calls:
             handler = self._tool_handlers.get(tool_call.function.name)
@@ -258,10 +252,7 @@ class ArxivAssistant:
             )
 
     def _execute_tool_calls_streaming(
-        self,
-        tool_calls: List[Any],
-        messages: List[Dict[str, Any]],
-        user_id: int
+        self, tool_calls: List[Any], messages: List[Dict[str, Any]], user_id: int
     ) -> None:
         for tool_call in tool_calls:
             handler = self._tool_handlers.get(tool_call["function"]["name"])
@@ -296,7 +287,7 @@ class ArxivAssistant:
         query = args.get("query")
         arxiv_id = args.get("arxiv_id")
         print(f"query: {query}")
-        print(f"arxiv_id: {args.get("arxiv_id")}")
+        print(f"arxiv_id: {args.get('arxiv_id')}")
         if not query:
             raise ValueError("Missing 'query' parameter")
 
@@ -306,7 +297,7 @@ class ArxivAssistant:
             query=query,
             top_k=args.get("top_k", self.top_k),
             filters={"arxiv_id": arxiv_id} if arxiv_id is not None else None,
-            user_id=user_id
+            user_id=user_id,
         )
 
         return {"results": results}

@@ -1,7 +1,6 @@
+import redis
 from arxiv_lib.arxiv.client import ArxivClient
 from config import settings
-import redis
-
 
 arxiv_client = ArxivClient(settings=settings.arxiv)
 redis_settings = settings.redis
