@@ -1,5 +1,5 @@
 [project]
-name = "arxiv_api"
+name = "arxiv_backend"
 version = "0.1.0"
 description = "Arxiv assistant API"
 readme = "README.md"

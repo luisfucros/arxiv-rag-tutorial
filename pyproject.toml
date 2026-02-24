@@ -6,19 +6,19 @@ readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "arxiv_lib",
-    "arxiv_api",
+    "arxiv_backend",
     "data_ingestion",
 ]
 
 [tool.uv.sources]
 arxiv_lib = { workspace = true }
-arxiv_api = { workspace = true }
+arxiv_backend = { workspace = true }
 data_ingestion = { workspace = true }
 
 [tool.uv.workspace]
 members = [
     "common-lib",
-    "arxiv_api",
+    "arxiv_backend",
     "data_ingestion",
 ]
 
@@ -32,3 +32,10 @@ ignore = ["E501", "B008", "B904", "B905"]
 
 [tool.ruff.format]
 quote-style = "double"
+
+[dependency-groups]
+dev = [
+    "awscli>=1.44.46",
+    "pytest>=9.0.2",
+    "ruff>=0.15.2",
+]
