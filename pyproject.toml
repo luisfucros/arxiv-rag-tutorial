@@ -1,0 +1,34 @@
+[project]
+name = "arxiv-assistant"
+version = "0.0.1"
+description = "Arxiv Assistant Source Code."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "arxiv_lib",
+    "arxiv_api",
+    "data_ingestion",
+]
+
+[tool.uv.sources]
+arxiv_lib = { workspace = true }
+arxiv_api = { workspace = true }
+data_ingestion = { workspace = true }
+
+[tool.uv.workspace]
+members = [
+    "common-lib",
+    "arxiv_api",
+    "data_ingestion",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+ignore = ["E501", "B008", "B904", "B905"]
+
+[tool.ruff.format]
+quote-style = "double"
