@@ -1,17 +1,15 @@
-import pytest
 import tempfile
-from pathlib import Path
 from datetime import datetime, timedelta
-from unittest.mock import Mock, MagicMock, patch, call
+from pathlib import Path
 from typing import Generator
+from unittest.mock import MagicMock, Mock, patch
 
 import arxiv
-
+import pytest
+from arxiv import HTTPError
 from arxiv_lib.arxiv.client import ArxivClient
 from arxiv_lib.config import ArxivSettings
-from arxiv_lib.schemas import ArxivPaper
-from arxiv_lib.exceptions import EntityNotFound, ServiceNotAvailable
-from arxiv import HTTPError
+from arxiv_lib.exceptions import EntityNotFound
 
 
 @pytest.fixture
@@ -82,10 +80,10 @@ class TestPdfCacheDir:
         with tempfile.TemporaryDirectory() as tmp_dir:
             new_cache_path = Path(tmp_dir) / "new_cache"
             assert not new_cache_path.exists()
-            
+
             settings = ArxivSettings(pdf_cache_dir=str(new_cache_path))
             client = ArxivClient(settings)
-            
+
             _ = client.pdf_cache_dir
             assert new_cache_path.exists()
 
@@ -128,7 +126,7 @@ class TestIsPdfCached:
         arxiv_id = "2101.12345v1"
         pdf_path = arxiv_client._get_pdf_path(arxiv_id)
         pdf_path.touch()  # Create empty file
-        
+
         assert arxiv_client._is_pdf_cached(arxiv_id)
 
     def test_is_pdf_cached_returns_false_for_directory(self, arxiv_client: ArxivClient):
@@ -136,14 +134,14 @@ class TestIsPdfCached:
         arxiv_id = "2101.12345v1"
         pdf_path = arxiv_client._get_pdf_path(arxiv_id)
         pdf_path.mkdir(parents=True, exist_ok=True)
-        
+
         assert not arxiv_client._is_pdf_cached(arxiv_id)
 
 
 class TestSearchPapers:
     """Test search_papers method."""
 
-    @patch('arxiv_lib.arxiv.client.arxiv.Client')
+    @patch("arxiv_lib.arxiv.client.arxiv.Client")
     def test_search_papers_success(self, mock_arxiv_client_class):
         """Test successful paper search."""
         # Setup mock
@@ -152,7 +150,7 @@ class TestSearchPapers:
 
         mock_author = Mock()
         mock_author.name = "John Doe"
-        
+
         mock_result = Mock(spec=arxiv.Result)
         mock_result.entry_id = "2101.12345v1"
         mock_result.title = "Test Paper"
@@ -180,7 +178,7 @@ class TestSearchPapers:
         assert papers[0].abstract == "Test abstract"
         assert papers[0].categories == ["cs.AI", "cs.LG"]
 
-    @patch('arxiv_lib.arxiv.client.arxiv.Client')
+    @patch("arxiv_lib.arxiv.client.arxiv.Client")
     def test_search_papers_empty_results(self, mock_arxiv_client_class):
         """Test search with no results."""
         mock_client_instance = MagicMock()
@@ -196,7 +194,7 @@ class TestSearchPapers:
 
         assert len(papers) == 0
 
-    @patch('arxiv_lib.arxiv.client.arxiv.Client')
+    @patch("arxiv_lib.arxiv.client.arxiv.Client")
     def test_search_papers_multiple_authors(self, mock_arxiv_client_class):
         """Test search with paper having multiple authors."""
         mock_client_instance = MagicMock()
@@ -227,7 +225,7 @@ class TestSearchPapers:
         assert len(papers[0].authors) == 3
         assert papers[0].authors == ["Alice", "Bob", "Charlie"]
 
-    @patch('arxiv_lib.arxiv.client.arxiv.Client')
+    @patch("arxiv_lib.arxiv.client.arxiv.Client")
     def test_search_papers_http_error(self, mock_arxiv_client_class):
         """Test search handles HTTPError."""
         mock_client_instance = MagicMock()
@@ -246,7 +244,7 @@ class TestSearchPapers:
 class TestGetById:
     """Test get_by_id method."""
 
-    @patch('arxiv_lib.arxiv.client.arxiv.Client')
+    @patch("arxiv_lib.arxiv.client.arxiv.Client")
     def test_get_by_id_success(self, mock_arxiv_client_class):
         """Test successful retrieval of paper by ID."""
         mock_client_instance = MagicMock()
@@ -277,7 +275,7 @@ class TestGetById:
         assert paper.arxiv_id == "2101.12345v1"
         assert result is not None
 
-    @patch('arxiv_lib.arxiv.client.arxiv.Client')
+    @patch("arxiv_lib.arxiv.client.arxiv.Client")
     def test_get_by_id_not_found(self, mock_arxiv_client_class):
         """Test get_by_id raises EntityNotFound when paper not found."""
         mock_client_instance = MagicMock()
@@ -292,7 +290,7 @@ class TestGetById:
             with pytest.raises(EntityNotFound):
                 client.get_by_id("nonexistent")
 
-    @patch('arxiv_lib.arxiv.client.arxiv.Client')
+    @patch("arxiv_lib.arxiv.client.arxiv.Client")
     def test_get_by_id_returns_none_for_empty_results(self, mock_arxiv_client_class):
         """Test get_by_id returns (None, None) for empty results."""
         mock_client_instance = MagicMock()
@@ -313,17 +311,17 @@ class TestGetById:
 class TestDownloadPdf:
     """Test download_pdf method."""
 
-    @patch('arxiv_lib.arxiv.client.arxiv.Client')
+    @patch("arxiv_lib.arxiv.client.arxiv.Client")
     def test_download_pdf_success(self, mock_arxiv_client_class, arxiv_client: ArxivClient):
         """Test successful PDF download."""
         mock_result = Mock(spec=arxiv.Result)
         mock_result.entry_id = "2101.12345v1"
-        
+
         # Create actual PDF file to simulate download
         pdf_path = arxiv_client._get_pdf_path("2101.12345v1")
         pdf_path.parent.mkdir(parents=True, exist_ok=True)
         pdf_path.write_text("mock pdf content")
-        
+
         mock_result.download_pdf.return_value = str(pdf_path)
 
         result_path = arxiv_client.download_pdf(mock_result)
@@ -347,7 +345,7 @@ class TestDownloadPdf:
         assert result_path == str(pdf_path)
         mock_result.download_pdf.assert_not_called()
 
-    @patch('arxiv_lib.arxiv.client.arxiv.Client')
+    @patch("arxiv_lib.arxiv.client.arxiv.Client")
     def test_download_pdf_force_download(self, mock_arxiv_client_class, arxiv_client: ArxivClient):
         """Test download_pdf with force_download=True bypasses cache."""
         arxiv_id = "2101.12345v1"
@@ -365,8 +363,10 @@ class TestDownloadPdf:
         assert result_path == str(pdf_path)
         mock_result.download_pdf.assert_called_once()
 
-    @patch('arxiv_lib.arxiv.client.arxiv.Client')
-    def test_download_pdf_with_custom_filename(self, mock_arxiv_client_class, arxiv_client: ArxivClient):
+    @patch("arxiv_lib.arxiv.client.arxiv.Client")
+    def test_download_pdf_with_custom_filename(
+        self, mock_arxiv_client_class, arxiv_client: ArxivClient
+    ):
         """Test download_pdf with custom filename."""
         custom_filename = "custom_name.pdf"
         pdf_path = arxiv_client.pdf_cache_dir / custom_filename
@@ -380,12 +380,13 @@ class TestDownloadPdf:
 
         assert result_path == str(pdf_path)
         mock_result.download_pdf.assert_called_once_with(
-            dirpath=str(arxiv_client.pdf_cache_dir),
-            filename=custom_filename
+            dirpath=str(arxiv_client.pdf_cache_dir), filename=custom_filename
         )
 
-    @patch('arxiv_lib.arxiv.client.arxiv.Client')
-    def test_download_pdf_file_not_found_after_download(self, mock_arxiv_client_class, arxiv_client: ArxivClient):
+    @patch("arxiv_lib.arxiv.client.arxiv.Client")
+    def test_download_pdf_file_not_found_after_download(
+        self, mock_arxiv_client_class, arxiv_client: ArxivClient
+    ):
         """Test download_pdf raises FileNotFoundError if file doesn't exist after download."""
         mock_result = Mock(spec=arxiv.Result)
         mock_result.entry_id = "2101.12345v1"
@@ -398,7 +399,7 @@ class TestDownloadPdf:
 class TestGetByIdAndDownload:
     """Test get_by_id_and_download method."""
 
-    @patch('arxiv_lib.arxiv.client.arxiv.Client')
+    @patch("arxiv_lib.arxiv.client.arxiv.Client")
     def test_get_by_id_and_download_success(self, mock_arxiv_client_class):
         """Test successful retrieval and download."""
         mock_client_instance = MagicMock()
@@ -423,20 +424,22 @@ class TestGetByIdAndDownload:
 
             # Mock the results
             mock_client_instance.results.return_value = [mock_result]
-            
+
             # Create the PDF file to satisfy the check
             pdf_path = client._get_pdf_path("2101.12345v1")
             pdf_path.parent.mkdir(parents=True, exist_ok=True)
             pdf_path.write_text("test pdf")
             mock_result.download_pdf.return_value = str(pdf_path)
 
-            pdf_path_result, paper = client.get_by_id_and_download("2101.12345v1", download_pdf=True)
+            pdf_path_result, paper = client.get_by_id_and_download(
+                "2101.12345v1", download_pdf=True
+            )
 
         assert pdf_path_result is not None
         assert paper is not None
         assert paper.arxiv_id == "2101.12345v1"
 
-    @patch('arxiv_lib.arxiv.client.arxiv.Client')
+    @patch("arxiv_lib.arxiv.client.arxiv.Client")
     def test_get_by_id_and_download_without_pdf(self, mock_arxiv_client_class):
         """Test get_by_id_and_download without downloading PDF."""
         mock_client_instance = MagicMock()
@@ -462,14 +465,13 @@ class TestGetByIdAndDownload:
             client.client = mock_client_instance
 
             pdf_path_result, paper = client.get_by_id_and_download(
-                "2101.12345v1",
-                download_pdf=False
+                "2101.12345v1", download_pdf=False
             )
 
         assert pdf_path_result is None
         assert paper is not None
 
-    @patch('arxiv_lib.arxiv.client.arxiv.Client')
+    @patch("arxiv_lib.arxiv.client.arxiv.Client")
     def test_get_by_id_and_download_not_found(self, mock_arxiv_client_class):
         """Test get_by_id_and_download returns None when paper not found."""
         mock_client_instance = MagicMock()
@@ -524,11 +526,12 @@ class TestCleanupOldPdfs:
         # Create old PDF
         old_pdf = arxiv_client._get_pdf_path("2101.12345v1")
         old_pdf.write_text("old pdf")
-        
+
         # Set modification time to 2 days ago
         old_time = datetime.now() - timedelta(days=2)
         old_pdf.stat()
         import os
+
         os.utime(old_pdf, (old_time.timestamp(), old_time.timestamp()))
 
         # Create new PDF
@@ -565,6 +568,7 @@ class TestCleanupOldPdfs:
             pdf.write_text(f"old pdf {i}")
             old_time = datetime.now() - timedelta(days=2)
             import os
+
             os.utime(pdf, (old_time.timestamp(), old_time.timestamp()))
 
         deleted_count = arxiv_client.cleanup_old_pdfs(days=1)
@@ -584,7 +588,7 @@ class TestContextManager:
     def test_context_manager_with_exception(self, arxiv_settings: ArxivSettings):
         """Test context manager handles exceptions."""
         try:
-            with ArxivClient(arxiv_settings) as client:
+            with ArxivClient(arxiv_settings):
                 raise RuntimeError("Test error")
         except RuntimeError:
             pass  # Expected
