@@ -66,26 +66,26 @@ services:
       - redis
       - db
 
-  api:
-    build: ./arxiv_api
+  backend:
+    build: ./arxiv_backend
     ports:
       - "8000:8000"
     command: >
       uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     env_file:
-      - ./arxiv_api/.env
+      - ./arxiv_backend/.env
     environment:
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_BACKEND_URL: redis://redis:6379/1
     develop:
       watch:
-        - path: ./arxiv_api/src
+        - path: ./arxiv_backend/src
           action: sync
           target: /app/
           ignore:
-              - ./arxiv_api/.venv
+              - ./arxiv_backend/.venv
               - .venv
-        - path: ./arxiv_api/pyproject.toml
+        - path: ./arxiv_backend/pyproject.toml
           action: rebuild
     depends_on:
       - redis

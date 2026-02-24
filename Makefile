@@ -20,11 +20,11 @@ ROOT_DIR := $(CURDIR)
 WHEELS_DIR := $(ROOT_DIR)/wheels
 
 TARGET_WHEEL_DIRS := \
-	$(ROOT_DIR)/arxiv_api/ \
+	$(ROOT_DIR)/arxiv_backend/ \
 	$(ROOT_DIR)/data_ingestion/
 
 TARGET_WHEEL_DIRS_RM := \
-	$(ROOT_DIR)/arxiv_api/wheels \
+	$(ROOT_DIR)/arxiv_backend/wheels \
 	$(ROOT_DIR)/data_ingestion/wheels
 
 # Sources that trigger wheel rebuild
