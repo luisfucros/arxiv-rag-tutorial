@@ -1,5 +1,5 @@
 [project]
-name = "arxiv-paper-rag-api"
+name = "arxiv_api"
 version = "0.1.0"
 description = "Arxiv assistant API"
 readme = "README.md"
