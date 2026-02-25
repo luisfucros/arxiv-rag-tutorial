@@ -21,11 +21,13 @@ WHEELS_DIR := $(ROOT_DIR)/wheels
 
 TARGET_WHEEL_DIRS := \
 	$(ROOT_DIR)/arxiv_backend/ \
-	$(ROOT_DIR)/data_ingestion/
+	$(ROOT_DIR)/data_ingestion/ \
+	$(ROOT_DIR)/migrations/
 
 TARGET_WHEEL_DIRS_RM := \
 	$(ROOT_DIR)/arxiv_backend/wheels \
-	$(ROOT_DIR)/data_ingestion/wheels
+	$(ROOT_DIR)/data_ingestion/wheels \
+	$(ROOT_DIR)/migrations/wheels
 
 # Sources that trigger wheel rebuild
 PACKAGE_SOURCES := $(shell find common-lib -name "*.py") common-lib/pyproject.toml

@@ -137,8 +137,6 @@ class ArxivTask(Base):
 
     owner: Mapped["User"] = relationship(back_populates="tasks")
 
-    __table_args__ = (sqlalchemy.Index("arxiv_task_task_id_unique_id", "task_id", unique=True),)
-
 
 class ChatSession(Base):
     __tablename__ = "chat_sessions"
