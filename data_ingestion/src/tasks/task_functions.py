@@ -1,11 +1,15 @@
 import logging
+from datetime import datetime, timezone
 from typing import Any, Dict, List
 
+from arxiv_lib.db_models.enums import TaskStatus
+from arxiv_lib.db_models.models import ArxivTask
 from arxiv_lib.repositories.paper import PaperRepository
 from arxiv_lib.tasks.enums import TaskNames
 from arxiv_lib.tasks.schemas import EmbeddingsRequest, PaperMetadataRequest
 from config import settings
 from services.embeddings.fastembed import DenseEmbedding, SparseEmbedding
+from sqlalchemy import select
 
 from tasks.celery_app import app
 
@@ -19,8 +23,8 @@ dense_model = DenseEmbedding()
 sparse_model = SparseEmbedding()
 
 
-@app.task(name=TaskNames.metadata_fetcher_task, base=BaseTask)
-def fetch_and_process_papers_task(params: Dict[str, Any]) -> Dict[str, Any]:
+@app.task(name=TaskNames.metadata_fetcher_task, base=BaseTask, bind=True)
+def fetch_and_process_papers_task(self, params: Dict[str, Any]) -> Dict[str, Any]:
     """
     Celery task wrapper for MetadataFetcher.fetch_and_process_papers
 
@@ -30,6 +34,16 @@ def fetch_and_process_papers_task(params: Dict[str, Any]) -> Dict[str, Any]:
     logger.info("Starting fetch_and_process_papers_task with params: %s", params)
 
     fetcher_params = PaperMetadataRequest(**params)
+
+    with database.get_session() as session:  # type: ignore
+        task_id = self.request.id
+        query = select(ArxivTask).where(ArxivTask.task_id == task_id)
+        job = session.scalar(query)
+        job.status = TaskStatus.running
+        job.updated_at = datetime.now(timezone.utc)
+
+        session.add(job)
+        session.commit()
 
     with database.get_session() as session:  # type: ignore
         paper_repo = PaperRepository(session)
