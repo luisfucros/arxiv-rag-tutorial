@@ -12,6 +12,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from pydantic import ValidationError
 from repositories.chat_history import ChatRepository
+from repositories.feedback import FeedbackRepository
 from repositories.tasks import TaskRepository
 from schemas.user import TokenPayload, UserOut
 from services.assistant.client import ArxivAssistant
@@ -77,6 +78,12 @@ def get_task_repo(
     db: SessionDep,
 ) -> TaskRepository:
     return TaskRepository(db)
+
+
+def get_feedback_repo(
+    db: SessionDep,
+) -> FeedbackRepository:
+    return FeedbackRepository(db)
 
 
 def get_task_service(

@@ -7,7 +7,7 @@ from sqlalchemy import JSON, UUID, Boolean, DateTime, Enum, ForeignKey, Integer,
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..db.databases.postgresql import Base
-from .enums import TaskStatus, UserRoles
+from .enums import FeedbackValue, TaskStatus, UserRoles
 
 
 class User(Base):
@@ -26,6 +26,10 @@ class User(Base):
 
     tasks: Mapped[List["ArxivTask"]] = relationship(back_populates="owner")
     chat_sessions: Mapped[List["ChatSession"]] = relationship(
+        back_populates="owner",
+        cascade="all, delete-orphan",
+    )
+    feedbacks: Mapped[List["Feedback"]] = relationship(
         back_populates="owner",
         cascade="all, delete-orphan",
     )
@@ -200,3 +204,52 @@ class ChatMessage(Base):
     )
 
     session: Mapped["ChatSession"] = relationship(back_populates="messages")
+    feedbacks: Mapped[List["Feedback"]] = relationship(
+        back_populates="message",
+        cascade="all, delete-orphan",
+    )
+
+
+class Feedback(Base):
+    __tablename__ = "feedback"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    user_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    message_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("chat_messages.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    value: Mapped[FeedbackValue] = mapped_column(
+        Enum(FeedbackValue, name="feedback_value_enum"),
+        nullable=False,
+    )
+
+    comment: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    owner: Mapped["User"] = relationship(back_populates="feedbacks")
+    message: Mapped["ChatMessage"] = relationship(back_populates="feedbacks")
+
+    __table_args__ = (
+        sqlalchemy.UniqueConstraint(
+            "user_id",
+            "message_id",
+            name="feedback_user_message_unique",
+        ),
+    )

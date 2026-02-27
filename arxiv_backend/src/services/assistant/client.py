@@ -222,6 +222,7 @@ class ArxivAssistant:
     def _create_completion(self, messages: List[Dict[str, Any]]):
         return self.client.chat.completions.create(
             model=self.model,
+            temperature=0.0,
             messages=messages,
             tools=self.tools,
         )

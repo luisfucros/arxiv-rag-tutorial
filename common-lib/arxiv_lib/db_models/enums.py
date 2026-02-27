@@ -15,3 +15,10 @@ class TaskStatus(StrEnum):
     running = "running"
     completed = "completed"
     failed = "failed"
+
+
+class FeedbackValue(StrEnum):
+    """User feedback on a chat message (e.g. thumbs up/down)."""
+
+    positive = "positive"
+    negative = "negative"

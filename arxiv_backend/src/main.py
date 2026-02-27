@@ -1,6 +1,6 @@
 import logging
 
-from api.routes import arxiv, assistant, login, metadata, paper, search, tasks, users
+from api.routes import arxiv, assistant, feedback, login, metadata, paper, search, tasks, users
 from arxiv import HTTPError
 from arxiv_lib.exceptions import (
     ArxivServiceError,
@@ -31,6 +31,7 @@ app.include_router(metadata.router)
 app.include_router(paper.router)
 app.include_router(search.router)
 app.include_router(assistant.router)
+app.include_router(feedback.router)
 app.include_router(login.router)
 app.include_router(users.router)
 
