@@ -1,4 +1,5 @@
 from typing import Dict, List
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -9,3 +10,4 @@ class ChatHistoryRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     answer: str
+    message_id: UUID

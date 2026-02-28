@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, Generator, List, Optional
+from typing import Any, Dict, Generator, List, Optional, Tuple
 from uuid import UUID
 
 from arxiv_lib.repositories.paper import PaperRepository
@@ -62,12 +62,14 @@ class ArxivAssistant:
         user_query = chat_history[-1]["content"]
 
         if self.cache:
-            cached_response = None
             try:
                 cached_response = self.cache.find_cached_response(user_query)
                 if cached_response:
                     logger.info("Returning cached response for exact query match")
-                    yield cached_response.get("response")
+                    content = cached_response.get("response", "")
+                    msg = self.chat_repo.create_message(session_id, "assistant", content)
+                    yield content
+                    yield "\n" + json.dumps({"message_id": str(msg.id)})
                     return
             except Exception as e:
                 logger.warning(f"Cache check failed, proceeding with normal flow: {e}")
@@ -123,13 +125,15 @@ class ArxivAssistant:
             collected_tool_calls = list(tool_calls_by_index.values())
             # If no tool calls → done streaming
             if not collected_tool_calls:
-                self.chat_repo.create_message(session_id, "assistant", assistant_message["content"])
+                msg = self.chat_repo.create_message(
+                    session_id, "assistant", assistant_message["content"]
+                )
                 if self.cache:
                     try:
                         self.cache.store_response(user_query, assistant_message["content"])
                     except Exception as e:
                         logger.warning(f"Failed to store response in cache: {e}")
-
+                yield "\n" + json.dumps({"message_id": str(msg.id)})
                 return
 
             # Append assistant message
@@ -147,13 +151,14 @@ class ArxivAssistant:
         # Safety fallback (non-streamed final response)
         response = self._create_completion(messages)
         final_response = response.choices[0].message.content or ""
-        self.chat_repo.create_message(session_id, "assistant", final_response)
+        msg = self.chat_repo.create_message(session_id, "assistant", final_response)
         if self.cache:
             try:
                 self.cache.store_response(user_query, final_response)
             except Exception as e:
                 logger.warning(f"Failed to store response in cache: {e}")
         yield final_response
+        yield "\n" + json.dumps({"message_id": str(msg.id)})
 
     def chat(
         self,
@@ -161,7 +166,7 @@ class ArxivAssistant:
         user_id: int,
         session_id: UUID,
         max_rounds: int = 5,
-    ) -> str:
+    ) -> Tuple[str, UUID]:
         """
         Executes a ReAct-style loop:
         - If no tool call → return immediately
@@ -174,12 +179,13 @@ class ArxivAssistant:
         user_query = chat_history[-1]["content"]
 
         if self.cache:
-            cached_response = None
             try:
                 cached_response = self.cache.find_cached_response(user_query)
                 if cached_response:
                     logger.info("Returning cached response for exact query match")
-                    return cached_response.get("response")
+                    content = cached_response.get("response", "")
+                    msg = self.chat_repo.create_message(session_id, "assistant", content)
+                    return (content, msg.id)
             except Exception as e:
                 logger.warning(f"Cache check failed, proceeding with normal flow: {e}")
 
@@ -193,28 +199,27 @@ class ArxivAssistant:
             messages.append(assistant_message)
 
             if not assistant_message.tool_calls:
-                self.chat_repo.create_message(
-                    session_id, "assistant", assistant_message.content or ""
-                )
+                content = assistant_message.content or ""
+                msg = self.chat_repo.create_message(session_id, "assistant", content)
                 if self.cache:
                     try:
-                        self.cache.store_response(user_query, assistant_message.content or "")
+                        self.cache.store_response(user_query, content)
                     except Exception as e:
                         logger.warning(f"Failed to store response in cache: {e}")
-                return assistant_message.content or ""
+                return (content, msg.id)
 
             self._execute_tool_calls(assistant_message.tool_calls, messages, user_id=user_id)
 
         # Safety fallback (if max rounds reached)
         response = self._create_completion(messages)
         final_response = response.choices[0].message.content or ""
-        self.chat_repo.create_message(session_id, "assistant", final_response)
+        msg = self.chat_repo.create_message(session_id, "assistant", final_response)
         if self.cache:
             try:
                 self.cache.store_response(user_query, final_response)
             except Exception as e:
                 logger.warning(f"Failed to store response in cache: {e}")
-        return final_response
+        return (final_response, msg.id)
 
     def _build_messages(self, chat_history: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         return [{"role": "system", "content": SYSTEM_PROMPT}, *chat_history]

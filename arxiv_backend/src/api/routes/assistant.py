@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from api.dependencies import CurrentUser, get_arxiv_assistant
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
@@ -14,8 +16,8 @@ def chat_arxiv(
     current_user: CurrentUser,
     arxiv_assistant: ArxivAssistant = Depends(get_arxiv_assistant),
 ):
-    answer = arxiv_assistant.chat(req.chat_history, current_user.id, session_id)
-    return ChatResponse(answer=answer)
+    answer, message_id = arxiv_assistant.chat(req.chat_history, current_user.id, UUID(session_id))
+    return ChatResponse(answer=answer, message_id=message_id)
 
 
 @router.post("/chat/stream")
@@ -26,6 +28,6 @@ def chat_arxiv_stream(
     arxiv_assistant: ArxivAssistant = Depends(get_arxiv_assistant),
 ):
     return StreamingResponse(
-        arxiv_assistant.chat_stream(req.chat_history, current_user.id, session_id),
+        arxiv_assistant.chat_stream(req.chat_history, current_user.id, UUID(session_id)),
         media_type="text/plain",
     )
