@@ -70,8 +70,8 @@ class ArxivAssistant:
                     logger.info("Returning cached response for exact query match")
                     content = cached_response.get("response", "")
                     msg = self.chat_repo.create_message(session_id, "assistant", content)
-                    yield content
-                    yield "\n" + json.dumps({"message_id": str(msg.id)})
+                    yield self._content_chunk(content)
+                    yield self._id_chunk(msg)
                     return
             except Exception as e:
                 logger.warning(f"Cache check failed, proceeding with normal flow: {e}")
@@ -96,7 +96,7 @@ class ArxivAssistant:
                 # Stream content tokens immediately
                 if delta.content:
                     assistant_message["content"] += delta.content
-                    yield delta.content
+                    yield self._content_chunk(delta.content)
 
                 # Collect tool calls (do not stream)
                 if delta.tool_calls:
@@ -135,7 +135,7 @@ class ArxivAssistant:
                         self.cache.store_response(user_query, assistant_message["content"])
                     except Exception as e:
                         logger.warning(f"Failed to store response in cache: {e}")
-                yield "\n" + json.dumps({"message_id": str(msg.id)})
+                yield self._id_chunk(msg)
                 return
 
             # Append assistant message
@@ -159,8 +159,8 @@ class ArxivAssistant:
                 self.cache.store_response(user_query, final_response)
             except Exception as e:
                 logger.warning(f"Failed to store response in cache: {e}")
-        yield final_response
-        yield "\n" + json.dumps({"message_id": str(msg.id)})
+        yield self._content_chunk(final_response)
+        yield self._id_chunk(msg)
 
     @handle_openai_errors
     def chat(
@@ -223,6 +223,12 @@ class ArxivAssistant:
             except Exception as e:
                 logger.warning(f"Failed to store response in cache: {e}")
         return (final_response, msg.id)
+
+    def _content_chunk(self, text: str) -> str:
+        return json.dumps({"type": "content", "text": text})
+
+    def _id_chunk(self, msg) -> str:
+        return json.dumps({"type": "message_id", "message_id": str(msg.id)})
 
     def _build_messages(self, chat_history: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         return [{"role": "system", "content": SYSTEM_PROMPT}, *chat_history]
