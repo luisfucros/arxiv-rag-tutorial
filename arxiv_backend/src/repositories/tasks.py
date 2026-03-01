@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 from arxiv_lib.db_models.enums import TaskStatus
 from arxiv_lib.db_models.models import ArxivTask
 from arxiv_lib.exceptions import ConflictError, EntityNotFound
+from arxiv_lib.repositories.errors import handle_sql_errors
 from sqlalchemy.orm import Session
 
 
@@ -11,6 +12,7 @@ class TaskRepository:
     def __init__(self, session: Session):
         self.session = session
 
+    @handle_sql_errors
     def create(self, task_name: str, parameters: Dict[str, Any], owner_id: int) -> ArxivTask:
         task = ArxivTask(
             task_id=str(uuid.uuid4()), task_type=task_name, parameters=parameters, owner_id=owner_id
@@ -20,6 +22,7 @@ class TaskRepository:
         self.session.refresh(task)
         return task
 
+    @handle_sql_errors
     def get_tasks(self, limit: int = 100, offset: int = 0) -> List[ArxivTask]:
         """Return a list of tasks ordered by newest first."""
         return (
@@ -30,10 +33,12 @@ class TaskRepository:
             .all()
         )
 
+    @handle_sql_errors
     def get_task(self, task_id: str) -> Optional[ArxivTask]:
         """Return a single task by its `task_id`, or `None` if not found."""
         return self.session.query(ArxivTask).filter_by(task_id=task_id).one_or_none()
 
+    @handle_sql_errors
     def reset_task(self, task_id: str) -> ArxivTask:
         """Reset a failed task back to pending. Raises ValueError if not found or not failed.
 

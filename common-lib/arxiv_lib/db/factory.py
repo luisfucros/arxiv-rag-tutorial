@@ -10,14 +10,14 @@ def make_database() -> BaseDatabase:
     :rtype: BaseDatabase
     """
     # Get settings from centralized config
-    settings = get_settings()
+    settings = get_settings().postgres
 
     # Create PostgreSQL config from settings
     config = PostgreSQLSettings(
-        database_url=settings.postgres_database_url,
-        echo_sql=settings.postgres_echo_sql,
-        pool_size=settings.postgres_pool_size,
-        max_overflow=settings.postgres_max_overflow,
+        database_url=settings.database_url,
+        echo_sql=settings.echo_sql,
+        pool_size=settings.pool_size,
+        max_overflow=settings.max_overflow,
     )
 
     database = PostgreSQLDatabase(config=config)

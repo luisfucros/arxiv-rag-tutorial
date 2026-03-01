@@ -2,7 +2,12 @@ from typing import Annotated
 
 import jwt
 from api.core.db import get_db
-from api.handlers.instances import get_redis_client
+from api.handlers.instances import (
+    celery_client,
+    openai_client,
+    redis_client,
+    vector_db_client,
+)
 from arxiv_lib.db_models import models
 from arxiv_lib.db_models.enums import UserRoles
 from arxiv_lib.repositories.paper import PaperRepository
@@ -16,11 +21,6 @@ from repositories.feedback import FeedbackRepository
 from repositories.tasks import TaskRepository
 from schemas.user import TokenPayload, UserOut
 from services.assistant.client import ArxivAssistant
-from services.builders import (
-    get_celery_client,
-    get_openai_client,
-    get_vector_db_client,
-)
 from services.cache import CacheClient
 from services.search import SearchEngineService
 from services.tasks import TaskService
@@ -56,10 +56,8 @@ def get_current_admin(current_user: CurrentUser) -> UserOut:
     return current_user
 
 
-def get_cache(
-    client=Depends(get_redis_client),
-) -> CacheClient:
-    return CacheClient(redis_client=client, settings=settings.redis)
+def get_cache() -> CacheClient:
+    return CacheClient(redis_client=redis_client, settings=settings.redis)
 
 
 def get_paper_repo(
@@ -89,7 +87,7 @@ def get_feedback_repo(
 def get_task_service(
     task_repository: TaskRepository = Depends(get_task_repo),
 ) -> TaskService:
-    return TaskService(task_repository, get_celery_client())
+    return TaskService(task_repository, celery_client=celery_client)
 
 
 def get_search_engine_service(
@@ -97,7 +95,7 @@ def get_search_engine_service(
 ) -> SearchEngineService:
     return SearchEngineService(
         task_manager=task_service,
-        vector_db_client=get_vector_db_client(),
+        vector_db_client=vector_db_client,
     )
 
 
@@ -111,6 +109,6 @@ def get_arxiv_assistant(
         search_engine=search_engine,
         chat_repo=chat_repo,
         paper_repo=paper_repo,
-        client=get_openai_client(),
+        client=openai_client,
         # cache=cache
     )

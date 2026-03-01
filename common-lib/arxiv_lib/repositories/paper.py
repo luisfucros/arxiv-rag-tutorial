@@ -6,12 +6,14 @@ from sqlalchemy.orm import Session
 
 from ..db_models.models import Paper
 from ..schemas import PaperCreate
+from .errors import handle_sql_errors
 
 
 class PaperRepository:
     def __init__(self, session: Session):
         self.session = session
 
+    @handle_sql_errors
     def create(self, paper: PaperCreate) -> Paper:
         db_paper = Paper(**paper.model_dump())
         self.session.add(db_paper)
@@ -19,22 +21,27 @@ class PaperRepository:
         self.session.refresh(db_paper)
         return db_paper
 
+    @handle_sql_errors
     def get_by_arxiv_id(self, arxiv_id: str) -> Optional[Paper]:
         stmt = select(Paper).where(Paper.arxiv_id == arxiv_id)
         return self.session.scalar(stmt)
 
+    @handle_sql_errors
     def get_by_id(self, paper_id: UUID) -> Optional[Paper]:
         stmt = select(Paper).where(Paper.id == paper_id)
         return self.session.scalar(stmt)
 
+    @handle_sql_errors
     def get_all(self, limit: int = 100, offset: int = 0) -> List[Paper]:
         stmt = select(Paper).order_by(Paper.published_date.desc()).limit(limit).offset(offset)
         return list(self.session.scalars(stmt))
 
+    @handle_sql_errors
     def get_count(self) -> int:
         stmt = select(func.count(Paper.id))
         return self.session.scalar(stmt) or 0
 
+    @handle_sql_errors
     def get_processed_papers(self, limit: int = 100, offset: int = 0) -> List[Paper]:
         """Get papers that have been successfully processed with PDF content."""
         stmt = (
@@ -46,6 +53,7 @@ class PaperRepository:
         )
         return list(self.session.scalars(stmt))
 
+    @handle_sql_errors
     def get_unprocessed_papers(self, limit: int = 100, offset: int = 0) -> List[Paper]:
         """Get papers that haven't been processed for PDF content yet."""
         stmt = (
@@ -57,6 +65,7 @@ class PaperRepository:
         )
         return list(self.session.scalars(stmt))
 
+    @handle_sql_errors
     def get_papers_with_raw_text(self, limit: int = 100, offset: int = 0) -> List[Paper]:
         """Get papers that have raw text content stored."""
         stmt = (
@@ -68,6 +77,7 @@ class PaperRepository:
         )
         return list(self.session.scalars(stmt))
 
+    @handle_sql_errors
     def get_processing_stats(self) -> dict:
         """Get statistics about PDF processing status."""
         total_papers = self.get_count()
@@ -90,12 +100,14 @@ class PaperRepository:
             else 0,
         }
 
+    @handle_sql_errors
     def update(self, paper: Paper) -> Paper:
         self.session.add(paper)
         self.session.commit()
         self.session.refresh(paper)
         return paper
 
+    @handle_sql_errors
     def upsert(self, paper_create: PaperCreate) -> Paper:
         # Check if paper already exists
         existing_paper = self.get_by_arxiv_id(paper_create.arxiv_id)

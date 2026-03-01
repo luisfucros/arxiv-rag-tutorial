@@ -7,6 +7,7 @@ from arxiv_lib.exceptions import (
     ConflictError,
     EntityAlreadyExists,
     EntityNotFound,
+    RateLimitExceeded,
     ServiceNotAvailable,
 )
 from fastapi import FastAPI, status
@@ -45,6 +46,8 @@ def arxiv_error_handler(request, exc):
     elif isinstance(exc, (EntityAlreadyExists, ConflictError)):
         status_code = status.HTTP_409_CONFLICT
     elif isinstance(exc, HTTPError):
+        status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    elif isinstance(exc, RateLimitExceeded):
         status_code = status.HTTP_429_TOO_MANY_REQUESTS
     elif isinstance(exc, ServiceNotAvailable):
         status_code = status.HTTP_503_SERVICE_UNAVAILABLE

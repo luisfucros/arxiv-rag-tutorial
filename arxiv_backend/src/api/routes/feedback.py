@@ -4,7 +4,6 @@ from api.dependencies import CurrentUser, get_current_user, get_feedback_repo
 from fastapi import APIRouter, Depends, HTTPException, status
 from repositories.feedback import FeedbackRepository
 from schemas.feedback import FeedbackCreate, FeedbackResponse, FeedbackUpdate
-from sqlalchemy.exc import IntegrityError
 
 router = APIRouter(
     prefix="/feedback",
@@ -20,18 +19,12 @@ def create_feedback(
     feedback_repo: FeedbackRepository = Depends(get_feedback_repo),
 ):
     """Create feedback for a chat message. Message must belong to a session owned by the current user."""
-    try:
-        feedback = feedback_repo.create(
-            user_id=current_user.id,
-            message_id=body.message_id,
-            value=body.value,
-            comment=body.comment,
-        )
-    except IntegrityError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Feedback already exists for this message",
-        )
+    feedback = feedback_repo.create(
+        user_id=current_user.id,
+        message_id=body.message_id,
+        value=body.value,
+        comment=body.comment,
+    )
     if not feedback:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

@@ -10,6 +10,7 @@ from services.cache import CacheClient
 from services.search import SearchEngineService
 from utils import paper_to_dict
 
+from .errors import handle_openai_errors
 from .prompts import SYSTEM_PROMPT
 from .tools import TOOLS
 
@@ -43,6 +44,7 @@ class ArxivAssistant:
             "get_by_arxiv_id": self._handle_get_by_arxiv_id,
         }
 
+    @handle_openai_errors
     def chat_stream(
         self,
         chat_history: List[Dict[str, Any]],
@@ -160,6 +162,7 @@ class ArxivAssistant:
         yield final_response
         yield "\n" + json.dumps({"message_id": str(msg.id)})
 
+    @handle_openai_errors
     def chat(
         self,
         chat_history: List[Dict[str, Any]],

@@ -3,12 +3,12 @@ import json
 from typing import List
 
 from api.dependencies import get_current_user, get_task_service
+from api.handlers.instances import celery_app
 from arxiv_lib.tasks.utils import make_json_safe
 from celery.result import AsyncResult
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from schemas.metadata import TaskResponse, TaskStatusResponse
-from services.builders import get_celery_app
 from services.tasks import TaskService
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"], dependencies=[Depends(get_current_user)])
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/tasks", tags=["Tasks"], dependencies=[Depends(get_cu
 
 @router.get("/status/{task_id}", response_model=TaskStatusResponse)
 def get_task_status(task_id: str):
-    result = AsyncResult(task_id, app=get_celery_app)
+    result = AsyncResult(task_id, app=celery_app)
     task_status = TaskStatusResponse(
         task_id=task_id,
         status=result.state,
@@ -73,7 +73,7 @@ async def stream_task_status(
                     yield 'event: error\ndata: {"error": "Task not found"}\n\n'
                     break
 
-                celery_result = AsyncResult(task_id, app=get_celery_app())
+                celery_result = AsyncResult(task_id, app=celery_app)
 
                 current_status = {
                     "task_id": task.task_id,

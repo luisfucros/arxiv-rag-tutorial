@@ -9,6 +9,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class PostgreSQLSettings(BaseSettings):
     """PostgreSQL configuration settings."""
 
+    model_config = SettingsConfigDict(
+        extra="ignore",
+        frozen=True,
+        case_sensitive=False,
+        env_prefix="POSTGRES_",
+    )
+
     database_url: str = Field(
         default="postgresql://rag_user:rag_password@localhost:5432/rag_db",
         description="PostgreSQL database URL",
@@ -17,8 +24,14 @@ class PostgreSQLSettings(BaseSettings):
     pool_size: int = Field(default=20, description="Database connection pool size")
     max_overflow: int = Field(default=0, description="Maximum pool overflow")
 
-    class Config:
-        env_prefix = "POSTGRES_"
+    @field_validator("database_url")
+    @classmethod
+    def validate_database_url(cls, v: str) -> str:
+        if not (v.startswith("postgresql://") or v.startswith("postgresql+psycopg2://")):
+            raise ValueError(
+                "Database URL must start with 'postgresql://' or 'postgresql+psycopg2://'"
+            )
+        return v
 
 
 class BaseConfigSettings(BaseSettings):
@@ -97,6 +110,7 @@ class RedisSettings(BaseConfigSettings):
         extra="ignore",
         frozen=True,
         case_sensitive=False,
+        env_prefix="REDIS_",
     )
 
     host: str = "redis"
@@ -117,20 +131,15 @@ class Settings(BaseConfigSettings):
     environment: Literal["development", "staging", "production", "local"] = "local"
     service_name: str = "rag-api"
 
-    postgres_database_url: str = "postgresql://rag_user:rag_password@db:5432/rag_db"
-    postgres_echo_sql: bool = False
-    postgres_pool_size: int = 20
-    postgres_max_overflow: int = 0
+    celery_broker_url: str = "redis://yourPassword@localhost:6379/0"
+    celery_backend_url: str = "redis://yourPassword@localhost:6379/1"
 
-    celery_broker_url: str = "redis://redis:6379/0"
-    celery_backend_url: str = "redis://redis:6379/1"
-
-    vectordb_host: str = "vectordb"
+    vectordb_host: str = "localhost"
     vectordb_port: int = 6333
     collection_name: str = "arxiv_papers"
 
     artifacts_buket: str = "arxiv-service"
-    localstack_host: str = "localstack:4566"
+    localstack_host: str = "localhost:4566"
 
     algorithm: str = "HS256"
     secret_key: str = Field(
@@ -140,18 +149,10 @@ class Settings(BaseConfigSettings):
     access_token_expire_minutes: int = 60
 
     arxiv: ArxivSettings = Field(default_factory=ArxivSettings)
+    postgres: PostgreSQLSettings = Field(default_factory=PostgreSQLSettings)
     pdf_parser: PDFParserSettings = Field(default_factory=PDFParserSettings)
     chunking: ChunkingSettings = Field(default_factory=ChunkingSettings)
     redis: RedisSettings = Field(default_factory=RedisSettings)
-
-    @field_validator("postgres_database_url")
-    @classmethod
-    def validate_database_url(cls, v: str) -> str:
-        if not (v.startswith("postgresql://") or v.startswith("postgresql+psycopg2://")):
-            raise ValueError(
-                "Database URL must start with 'postgresql://' or 'postgresql+psycopg2://'"
-            )
-        return v
 
 
 @lru_cache

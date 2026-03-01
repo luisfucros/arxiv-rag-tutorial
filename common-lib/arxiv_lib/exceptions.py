@@ -44,3 +44,27 @@ class ServiceNotAvailable(ArxivServiceError):
     """
 
     pass
+
+
+class RateLimitExceeded(ArxivServiceError):
+    """
+    Thrown when a service rate limit is exceeded.
+    """
+
+    pass
+
+
+class DataBaseError(ArxivServiceError):
+    """
+    Thrown when a database error occurs.
+    """
+
+    pass
+
+
+class FileError(ArxivServiceError):
+    """
+    Thrown when a file error occurs.
+    """
+
+    pass
