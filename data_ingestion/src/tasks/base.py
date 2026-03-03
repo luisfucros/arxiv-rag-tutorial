@@ -1,15 +1,13 @@
-import logging
 from datetime import datetime, timezone
 
 from arxiv_lib.db_models.enums import TaskStatus
 from arxiv_lib.db_models.models import ArxivTask
 from arxiv_lib.tasks.utils import make_json_safe
 from celery import Task
+from loguru import logger
 from sqlalchemy import select
 
 from . import database
-
-logger = logging.getLogger(__name__)
 
 
 class BaseTask(Task):
@@ -22,7 +20,7 @@ class BaseTask(Task):
         Log the task failure in the DB.
         """
         err_type = type(exc)
-        logger.error("Task failed [%s]: %s", task_id, str(exc), exc_info=True)
+        logger.opt(exception=True).error("Task failed [{}]: {}", task_id, str(exc))
         try:
             with database.get_session() as session:
                 query = select(ArxivTask).where(ArxivTask.task_id == task_id)
@@ -36,13 +34,13 @@ class BaseTask(Task):
                 session.commit()
 
         except Exception as e:
-            logger.exception("Failed to log task failure [%s]", type(e).__name__)
+            logger.opt(exception=True).error("Failed to log task failure [{}]", type(e).__name__)
 
     def on_success(self, retval, task_id, args, kwargs):
         """
         Log the task success in the DB.
         """
-        logger.info("Task completed successfully [%s]", task_id)
+        logger.info("Task completed successfully [{}]", task_id)
         try:
             with database.get_session() as session:
                 query = select(ArxivTask).where(ArxivTask.task_id == task_id)
@@ -58,4 +56,4 @@ class BaseTask(Task):
                 session.commit()
 
         except Exception as e:
-            logger.exception("Failed to log task success [%s]", type(e).__name__)
+            logger.opt(exception=True).error("Failed to log task success [{}]", type(e).__name__)

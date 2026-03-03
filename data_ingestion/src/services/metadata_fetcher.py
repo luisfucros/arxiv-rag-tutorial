@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -9,12 +8,11 @@ from arxiv_lib.exceptions import EntityNotFound
 from arxiv_lib.repositories.paper import PaperRepository
 from arxiv_lib.schemas import PaperCreate
 from exceptions import MetadataFetchingException, PipelineException
+from loguru import logger
 from services.pdf_parser.parser import PDFParserService
 from sqlalchemy.orm import Session
 
 from .s3_handler import S3Handler
-
-logger = logging.getLogger(__name__)
 
 
 class MetadataFetcher:

@@ -1,11 +1,9 @@
 import functools
-import logging
 
+from loguru import logger
 from sqlalchemy.exc import SQLAlchemyError
 
 from ..exceptions import DataBaseError
-
-logger = logging.getLogger(__name__)
 
 
 def handle_sql_errors(func):
@@ -18,13 +16,12 @@ def handle_sql_errors(func):
         try:
             return func(*args, **kwargs)
         except SQLAlchemyError as e:
-            logger.error(
-                "SQLAlchemyError during '%s' [%s.%s]: %s",
+            logger.opt(exception=True).error(
+                "SQLAlchemyError during '{}' [{}.{}]: {}",
                 func.__name__,
                 type(e).__module__,
                 type(e).__qualname__,
                 str(e),
-                exc_info=True,
             )
             raise DataBaseError(
                 "Operation failed '%s' due to DB error: %s" % (func.__name__, type(e).__name__)

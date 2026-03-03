@@ -1,13 +1,11 @@
-import logging
 from typing import Dict, List
 from uuid import uuid4
 
 from arxiv_lib.vector_db.qdrant import QdrantDB
+from loguru import logger
 from services.embeddings.inference import FastembedEmbeddingsClient
 
 from .text_chunker import TextChunker
-
-logger = logging.getLogger(__name__)
 
 
 class HybridIndexingService:

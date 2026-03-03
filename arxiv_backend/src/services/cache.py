@@ -1,13 +1,11 @@
 import hashlib
 import json
-import logging
 from datetime import timedelta
 from typing import Any, Dict, Optional
 
 import redis
 from arxiv_lib.config import RedisSettings
-
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 class CacheClient:

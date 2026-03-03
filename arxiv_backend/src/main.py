@@ -1,5 +1,4 @@
-import logging
-
+from api.middlewares import LoggingMiddleware
 from api.routes import arxiv, assistant, feedback, login, metadata, paper, search, tasks, users
 from arxiv import HTTPError
 from arxiv_lib.exceptions import (
@@ -12,19 +11,15 @@ from arxiv_lib.exceptions import (
 )
 from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
-)
-logger = logging.getLogger(__name__)
-
+from loguru import logger
 
 app = FastAPI(
     title="Arxiv Assistant API",
     description="API for searching and querying arXiv papers with RAG and assistant capabilities.",
     version="0.1.0",
 )
+
+app.add_middleware(LoggingMiddleware)
 
 app.include_router(tasks.router)
 app.include_router(arxiv.router)
@@ -52,7 +47,7 @@ def arxiv_error_handler(request, exc):
     elif isinstance(exc, ServiceNotAvailable):
         status_code = status.HTTP_503_SERVICE_UNAVAILABLE
 
-    logger.error("ArxivError [%s]: %s", type(exc).__name__, str(exc), exc_info=True)
+    logger.opt(exception=True).error("ArxivError [{}]: {}", type(exc).__name__, str(exc))
 
     return JSONResponse(
         status_code=status_code,

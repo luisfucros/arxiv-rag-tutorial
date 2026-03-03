@@ -1,4 +1,3 @@
-import logging
 from typing import List
 
 from api.dependencies import get_current_user
@@ -6,9 +5,8 @@ from api.handlers.instances import arxiv_client
 from arxiv_lib.schemas import ArxivPaper
 from config import settings
 from fastapi import APIRouter, Depends
+from loguru import logger
 from schemas.arxiv import PaperRequest
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/arxiv", tags=["Arxiv"], dependencies=[Depends(get_current_user)])
 

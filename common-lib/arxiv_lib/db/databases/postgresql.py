@@ -1,7 +1,7 @@
-import logging
 from contextlib import contextmanager
 from typing import Generator, Optional
 
+from loguru import logger
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -9,9 +9,6 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from ...config import PostgreSQLSettings
 from .base import BaseDatabase
-
-logger = logging.getLogger(__name__)
-
 
 Base = declarative_base()
 

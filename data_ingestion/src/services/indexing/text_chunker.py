@@ -1,11 +1,9 @@
 import json
-import logging
 import re
 from typing import Dict, List, Optional, Union
 
+from loguru import logger
 from schemas.indexing.models import ChunkMetadata, TextChunk
-
-logger = logging.getLogger(__name__)
 
 
 class TextChunker:

@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
@@ -8,6 +7,7 @@ from arxiv_lib.repositories.paper import PaperRepository
 from arxiv_lib.tasks.enums import TaskNames
 from arxiv_lib.tasks.schemas import EmbeddingsRequest, PaperMetadataRequest
 from config import settings
+from loguru import logger
 from services.embeddings.fastembed import DenseEmbedding, SparseEmbedding
 from sqlalchemy import select
 
@@ -15,9 +15,6 @@ from tasks.celery_app import app
 
 from . import database, fetcher, hybrid_chunker
 from .base import BaseTask
-
-logger = logging.getLogger(__name__)
-
 
 dense_model = DenseEmbedding()
 sparse_model = SparseEmbedding()

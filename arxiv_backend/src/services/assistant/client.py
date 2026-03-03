@@ -1,9 +1,9 @@
 import json
-import logging
 from typing import Any, Dict, Generator, List, Optional, Tuple
 from uuid import UUID
 
 from arxiv_lib.repositories.paper import PaperRepository
+from loguru import logger
 from openai import OpenAI
 from repositories.chat_history import ChatRepository
 from services.cache import CacheClient
@@ -13,8 +13,6 @@ from utils import paper_to_dict
 from .errors import handle_openai_errors
 from .prompts import SYSTEM_PROMPT
 from .tools import TOOLS
-
-logger = logging.getLogger(__name__)
 
 
 class ArxivAssistant:
