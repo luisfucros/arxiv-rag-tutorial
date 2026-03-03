@@ -28,7 +28,7 @@ def fetch_and_process_papers_task(self, params: Dict[str, Any]) -> Dict[str, Any
     Returns:
         Dict with db_results and vectordb_results from both processing stages
     """
-    logger.info("Starting fetch_and_process_papers_task with params: %s", params)
+    logger.info("Starting fetch_and_process_papers_task with params: {}", params)
 
     fetcher_params = PaperMetadataRequest(**params)
 
@@ -52,7 +52,7 @@ def fetch_and_process_papers_task(self, params: Dict[str, Any]) -> Dict[str, Any
             db_session=session,
         )
 
-        logger.info("Database results: %s papers stored", db_results.get("stored", 0))
+        logger.info("Database results: {} papers stored", db_results.get("stored", 0))
 
         vectordb_results = {}
 

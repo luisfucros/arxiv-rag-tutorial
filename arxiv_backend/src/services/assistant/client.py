@@ -246,14 +246,14 @@ class ArxivAssistant:
             handler = self._tool_handlers.get(tool_call.function.name)
 
             if not handler:
-                logger.warning("Unknown tool call received: %s", tool_call.function.name)
+                logger.warning("Unknown tool call received: {}", tool_call.function.name)
                 continue
 
             try:
                 arguments = self._parse_arguments(tool_call.function.arguments)
                 result = handler(arguments, user_id=user_id)
             except Exception as exc:
-                logger.exception("Tool execution failed: %s", tool_call.function.name)
+                logger.exception("Tool execution failed: {}", tool_call.function.name)
                 result = {"error": str(exc)}
 
             messages.append(
@@ -271,14 +271,14 @@ class ArxivAssistant:
             handler = self._tool_handlers.get(tool_call["function"]["name"])
 
             if not handler:
-                logger.warning("Unknown tool call received: %s", tool_call["function"]["name"])
+                logger.warning("Unknown tool call received: {}", tool_call["function"]["name"])
                 continue
 
             try:
                 arguments = self._parse_arguments(tool_call["function"]["arguments"])
                 result = handler(arguments, user_id=user_id)
             except Exception as exc:
-                logger.exception("Tool execution failed: %s", tool_call["function"]["name"])
+                logger.exception("Tool execution failed: {}", tool_call["function"]["name"])
                 result = {"error": str(exc)}
 
             messages.append(
@@ -293,18 +293,17 @@ class ArxivAssistant:
         try:
             return json.loads(raw_args)
         except json.JSONDecodeError as exc:
-            logger.error("Invalid JSON tool arguments: %s", raw_args)
+            logger.error("Invalid JSON tool arguments: {}", raw_args)
             raise ValueError("Invalid tool arguments") from exc
 
     def _handle_search_arxiv(self, args: Dict[str, Any], user_id: int) -> Dict[str, Any]:
         query = args.get("query")
         arxiv_id = args.get("arxiv_id")
-        print(f"query: {query}")
-        print(f"arxiv_id: {args.get('arxiv_id')}")
+        logger.info(f"query: {query}, arxiv_id: {args.get('arxiv_id')}")
         if not query:
             raise ValueError("Missing 'query' parameter")
 
-        logger.info("Executing search_arxiv | query=%s", query)
+        logger.info("Executing search_arxiv | query={}", query)
 
         results = self.search_engine.search(
             query=query,
@@ -317,11 +316,11 @@ class ArxivAssistant:
 
     def _handle_get_by_arxiv_id(self, args: Dict[str, Any], user_id: int) -> Dict[str, Any]:
         arxiv_id = args.get("arxiv_id")
-        print(f"arxiv_id: {arxiv_id}")
+        logger.info(f"arxiv_id: {arxiv_id}")
         if not arxiv_id:
             raise ValueError("Missing 'arxiv_id' parameter")
 
-        logger.info("Fetching paper | arxiv_id=%s", arxiv_id)
+        logger.info("Fetching paper | arxiv_id={}", arxiv_id)
 
         paper = self.paper_repo.get_by_arxiv_id(arxiv_id=arxiv_id)
 
