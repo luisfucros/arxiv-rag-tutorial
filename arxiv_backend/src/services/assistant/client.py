@@ -6,6 +6,7 @@ from arxiv_lib.repositories.paper import PaperRepository
 from loguru import logger
 from openai import OpenAI
 from repositories.chat_history import ChatRepository
+from schemas.assistant import ChatMessage
 from services.cache import CacheClient
 from services.search import SearchEngineService
 from utils import paper_to_dict
@@ -59,7 +60,7 @@ class ArxivAssistant:
         if self.chat_repo.get_session(session_id, user_id) is None:
             self.chat_repo.create_session(user_id, session_id)
 
-        user_query = chat_history[-1]["content"]
+        user_query = chat_history[-1].content
 
         if self.cache:
             try:
@@ -177,7 +178,7 @@ class ArxivAssistant:
         if self.chat_repo.get_session(session_id, user_id) is None:
             self.chat_repo.create_session(user_id, session_id)
 
-        user_query = chat_history[-1]["content"]
+        user_query = chat_history[-1].content
 
         if self.cache:
             try:
@@ -228,8 +229,11 @@ class ArxivAssistant:
     def _id_chunk(self, msg) -> str:
         return json.dumps({"type": "message_id", "message_id": str(msg.id)})
 
-    def _build_messages(self, chat_history: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        return [{"role": "system", "content": SYSTEM_PROMPT}, *chat_history]
+    def _build_messages(self, chat_history: List[ChatMessage]) -> List[Dict[str, Any]]:
+        return [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            *[{"role": m.role.value, "content": m.content} for m in chat_history],
+        ]
 
     def _create_completion(self, messages: List[Dict[str, Any]]):
         return self.client.chat.completions.create(
