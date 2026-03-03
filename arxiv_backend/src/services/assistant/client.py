@@ -303,7 +303,6 @@ class ArxivAssistant:
     def _handle_search_arxiv(self, args: Dict[str, Any], user_id: int) -> Dict[str, Any]:
         query = args.get("query")
         arxiv_id = args.get("arxiv_id")
-        logger.info(f"query: {query}, arxiv_id: {args.get('arxiv_id')}")
         if not query:
             raise ValueError("Missing 'query' parameter")
 
@@ -320,7 +319,6 @@ class ArxivAssistant:
 
     def _handle_get_by_arxiv_id(self, args: Dict[str, Any], user_id: int) -> Dict[str, Any]:
         arxiv_id = args.get("arxiv_id")
-        logger.info(f"arxiv_id: {arxiv_id}")
         if not arxiv_id:
             raise ValueError("Missing 'arxiv_id' parameter")
 
