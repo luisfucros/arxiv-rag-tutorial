@@ -12,6 +12,7 @@ from services.search import SearchEngineService
 from utils import paper_to_dict
 
 from .errors import handle_openai_errors
+from .guardrails import GuardrailService
 from .prompts import SYSTEM_PROMPT
 from .tools import TOOLS
 
@@ -37,6 +38,7 @@ class ArxivAssistant:
         self.cache = cache
         self.top_k = top_k
         self.tools = TOOLS
+        self.guardrails = GuardrailService(client)
 
         self._tool_handlers = {
             "search_arxiv": self._handle_search_arxiv,
@@ -61,6 +63,14 @@ class ArxivAssistant:
             self.chat_repo.create_session(user_id, session_id)
 
         user_query = chat_history[-1].content
+        self.chat_repo.create_message(session_id, "user", user_query)
+
+        moderation_message = self.guardrails.moderate_text(user_query)
+        if moderation_message:
+            msg = self.chat_repo.create_message(session_id, "assistant", moderation_message)
+            yield self._content_chunk(moderation_message)
+            yield self._id_chunk(msg)
+            return
 
         if self.cache:
             try:
@@ -75,7 +85,6 @@ class ArxivAssistant:
             except Exception as e:
                 logger.warning(f"Cache check failed, proceeding with normal flow: {e}")
 
-        self.chat_repo.create_message(session_id, "user", user_query)
         messages = self._build_messages(chat_history)
 
         for _ in range(max_rounds):
@@ -179,6 +188,12 @@ class ArxivAssistant:
             self.chat_repo.create_session(user_id, session_id)
 
         user_query = chat_history[-1].content
+        self.chat_repo.create_message(session_id, "user", user_query)
+
+        moderation_message = self.guardrails.moderate_text(user_query)
+        if moderation_message:
+            msg = self.chat_repo.create_message(session_id, "assistant", moderation_message)
+            return (moderation_message, msg.id)
 
         if self.cache:
             try:
@@ -191,7 +206,6 @@ class ArxivAssistant:
             except Exception as e:
                 logger.warning(f"Cache check failed, proceeding with normal flow: {e}")
 
-        self.chat_repo.create_message(session_id, "user", user_query)
         messages = self._build_messages(chat_history)
 
         for _ in range(max_rounds):
