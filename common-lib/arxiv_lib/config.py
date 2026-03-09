@@ -140,6 +140,7 @@ class Settings(BaseConfigSettings):
 
     artifacts_buket: str = "arxiv-service"
     localstack_host: str = "localhost:4566"
+    frontend_url: str = "http://localhost:3000"
 
     algorithm: str = "HS256"
     secret_key: str = Field(

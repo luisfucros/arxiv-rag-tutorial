@@ -1,5 +1,15 @@
 from api.middlewares import LoggingMiddleware
-from api.routes import arxiv, assistant, feedback, login, metadata, paper, search, tasks, users
+from api.routes import (
+    arxiv,
+    assistant,
+    feedback,
+    login,
+    metadata,
+    paper,
+    search,
+    tasks,
+    users,
+)
 from arxiv import HTTPError
 from arxiv_lib.exceptions import (
     ArxivServiceError,
@@ -9,7 +19,9 @@ from arxiv_lib.exceptions import (
     RateLimitExceeded,
     ServiceNotAvailable,
 )
+from config import settings
 from fastapi import FastAPI, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from loguru import logger
 
@@ -19,6 +31,15 @@ app = FastAPI(
     version="0.1.0",
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        settings.frontend_url,
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.add_middleware(LoggingMiddleware)
 
 app.include_router(tasks.router)

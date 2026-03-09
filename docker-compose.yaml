@@ -110,6 +110,14 @@ services:
     depends_on:
       - db
 
+  frontend:
+    build: ./frontend
+    container_name: arxiv-rag-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:
     driver: local
