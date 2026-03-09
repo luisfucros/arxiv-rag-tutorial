@@ -22,6 +22,7 @@ export function Layout() {
             <NavLink to="/" end>Chat</NavLink>
             <NavLink to="/ingestion">Ingestion</NavLink>
             <NavLink to="/tasks">Tasks</NavLink>
+            <NavLink to="/papers">Papers</NavLink>
             <button type="button" onClick={handleLogout} className={styles.logout}>
               Log out
             </button>

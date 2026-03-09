@@ -44,9 +44,20 @@ class TaskService:
 
         return output
 
-    def get_tasks(self, limit: int = 100, offset: int = 0):
+    def get_tasks(
+        self,
+        limit: int = 100,
+        offset: int = 0,
+        owner_id: int | None = None,
+        task_type: str | None = None,
+    ):
         """Return a list of tasks from the repository."""
-        return self.repository.get_tasks(limit=limit, offset=offset)
+        return self.repository.get_tasks(
+            limit=limit,
+            offset=offset,
+            owner_id=owner_id,
+            task_type=task_type,
+        )
 
     def get_task(self, task_id: str):
         """Return a single task by `task_id` or `None` if not found."""

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { fetchMetadata } from '../api/ingestion'
 import { openTaskStream } from '../api/tasks'
 import type { TaskStatusResponse } from '../types/api'
@@ -12,9 +13,8 @@ function parsePaperIds(raw: string): string[] {
 }
 
 export function Ingestion() {
+  const queryClient = useQueryClient()
   const [paperIdsRaw, setPaperIdsRaw] = useState('')
-  const [processPdfs, setProcessPdfs] = useState(true)
-  const [storeToDb, setStoreToDb] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lastTaskId, setLastTaskId] = useState<string | null>(null)
@@ -39,8 +39,8 @@ export function Ingestion() {
     try {
       const { task_id } = await fetchMetadata({
         paper_ids: ids,
-        process_pdfs: processPdfs,
-        store_to_db: storeToDb,
+        process_pdfs: true,
+        store_to_db: true,
       })
       setLastTaskId(task_id)
       setStreamStatus({ task_id, status: 'queued' })
@@ -48,7 +48,10 @@ export function Ingestion() {
         task_id,
         (data) => setStreamStatus(data),
         (err) => setStreamError(err),
-        () => setLoading(false)
+        () => {
+          setLoading(false)
+          queryClient.invalidateQueries({ queryKey: ['tasks'] })
+        }
       )
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ingestion failed')
@@ -61,8 +64,8 @@ export function Ingestion() {
       <div className={styles.header}>
         <h1>Ingestion pipeline</h1>
         <p className={styles.subtitle}>
-          Submit arXiv paper IDs to fetch metadata, optionally process PDFs and store in the
-          database. Tasks run asynchronously.
+          Submit arXiv paper IDs to fetch metadata, process PDFs, and store in the database.
+          Tasks run asynchronously.
         </p>
       </div>
 
@@ -77,24 +80,6 @@ export function Ingestion() {
             rows={5}
             className={styles.textarea}
           />
-        </div>
-        <div className={styles.checkboxes}>
-          <label className={styles.checkbox}>
-            <input
-              type="checkbox"
-              checked={processPdfs}
-              onChange={(e) => setProcessPdfs(e.target.checked)}
-            />
-            Process PDFs
-          </label>
-          <label className={styles.checkbox}>
-            <input
-              type="checkbox"
-              checked={storeToDb}
-              onChange={(e) => setStoreToDb(e.target.checked)}
-            />
-            Store to database
-          </label>
         </div>
         {error && <p className={styles.error}>{error}</p>}
         <button type="submit" className={styles.submit} disabled={loading}>

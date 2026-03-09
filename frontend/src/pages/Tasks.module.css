@@ -56,15 +56,19 @@
   background: var(--bg-hover);
 }
 
+.status[data-status="completed"],
 .status[data-status="SUCCESS"] {
   color: #4ade80;
 }
 
+.status[data-status="pending"],
+.status[data-status="running"],
 .status[data-status="PENDING"],
 .status[data-status="STARTED"] {
   color: #fbbf24;
 }
 
+.status[data-status="failed"],
 .status[data-status="FAILURE"],
 .status[data-status="REVOKED"],
 .status[data-status="REJECTED"] {

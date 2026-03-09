@@ -23,15 +23,20 @@ class TaskRepository:
         return task
 
     @handle_sql_errors
-    def get_tasks(self, limit: int = 100, offset: int = 0) -> List[ArxivTask]:
-        """Return a list of tasks ordered by newest first."""
-        return (
-            self.session.query(ArxivTask)
-            .order_by(ArxivTask.created_at.desc())
-            .offset(offset)
-            .limit(limit)
-            .all()
-        )
+    def get_tasks(
+        self,
+        limit: int = 100,
+        offset: int = 0,
+        owner_id: int | None = None,
+        task_type: str | None = None,
+    ) -> List[ArxivTask]:
+        """Return a list of tasks ordered by newest first. Optionally filter by owner and task_type."""
+        q = self.session.query(ArxivTask)
+        if owner_id is not None:
+            q = q.where(ArxivTask.owner_id == owner_id)
+        if task_type is not None:
+            q = q.where(ArxivTask.task_type == task_type)
+        return q.order_by(ArxivTask.created_at.desc()).offset(offset).limit(limit).all()
 
     @handle_sql_errors
     def get_task(self, task_id: str) -> Optional[ArxivTask]:

@@ -2,8 +2,9 @@ import asyncio
 import json
 from typing import List
 
-from api.dependencies import get_current_user, get_task_service
+from api.dependencies import CurrentUser, get_current_user, get_task_service
 from api.handlers.instances import celery_app
+from arxiv_lib.tasks.enums import TaskNames
 from arxiv_lib.tasks.utils import make_json_safe
 from celery.result import AsyncResult
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -26,9 +27,18 @@ def get_task_status(task_id: str):
 
 
 @router.get("/", response_model=List[TaskStatusResponse])
-def list_tasks(task_service: TaskService = Depends(get_task_service)):
-    tasks = task_service.get_tasks()
-    return [TaskStatusResponse(task_id=t.task_id, status=t.status, result=None) for t in tasks]
+def list_tasks(
+    current_user: CurrentUser,
+    task_service: TaskService = Depends(get_task_service),
+):
+    """List ingestion (metadata_fetcher) tasks for the current user."""
+    tasks = task_service.get_tasks(
+        owner_id=current_user.id,
+        task_type=TaskNames.metadata_fetcher_task,
+    )
+    return [
+        TaskStatusResponse(task_id=t.task_id, status=t.status.value, result=None) for t in tasks
+    ]
 
 
 @router.get("/{task_id}", response_model=TaskStatusResponse)

@@ -1,8 +1,78 @@
 .chat {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   height: calc(100vh - 8rem);
   max-height: 720px;
+  gap: var(--space-4);
+}
+
+.sidebar {
+  width: 12rem;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.newChat {
+  padding: var(--space-2);
+  font-weight: 600;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.newChat:hover {
+  background: rgba(124, 108, 249, 0.15);
+}
+
+.sessionList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.session,
+.sessionActive {
+  width: 100%;
+  padding: var(--space-2);
+  font-size: 0.875rem;
+  text-align: left;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
+.sessionActive {
+  color: var(--accent);
+  background: rgba(124, 108, 249, 0.15);
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .header {
@@ -82,6 +152,80 @@
   border-radius: var(--radius);
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.feedback {
+  display: flex;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.feedback button {
+  padding: 0.2em 0.4em;
+  font-size: 0.875rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.feedback button:hover {
+  background: var(--bg-hover);
+}
+
+.feedbackSentPositive {
+  opacity: 1;
+  background: rgba(74, 222, 128, 0.2) !important;
+  border-color: #4ade80 !important;
+}
+
+.feedbackSentNegative {
+  opacity: 1;
+  background: rgba(248, 113, 113, 0.2) !important;
+  border-color: #f87171 !important;
+}
+
+.feedbackComment {
+  margin-top: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.feedbackComment label {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.feedbackTextarea {
+  padding: var(--space-2) var(--space-3);
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  resize: vertical;
+}
+
+.feedbackTextarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.feedbackSubmit {
+  align-self: flex-start;
+  padding: var(--space-1) var(--space-2);
+  font-size: 0.875rem;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.feedbackSubmit:hover {
+  background: rgba(124, 108, 249, 0.15);
 }
 
 .error {

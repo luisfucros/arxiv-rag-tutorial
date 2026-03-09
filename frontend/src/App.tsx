@@ -5,6 +5,7 @@ import { Layout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Chat } from './pages/Chat'
 import { Ingestion } from './pages/Ingestion'
+import { Papers } from './pages/Papers'
 import { Tasks } from './pages/Tasks'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
@@ -43,6 +44,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <Tasks />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="papers"
+                element={
+                  <ProtectedRoute>
+                    <Papers />
                   </ProtectedRoute>
                 }
               />

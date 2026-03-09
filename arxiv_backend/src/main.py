@@ -2,6 +2,7 @@ from api.middlewares import LoggingMiddleware
 from api.routes import (
     arxiv,
     assistant,
+    chat_history,
     feedback,
     login,
     metadata,
@@ -48,6 +49,7 @@ app.include_router(metadata.router)
 app.include_router(paper.router)
 app.include_router(search.router)
 app.include_router(assistant.router)
+app.include_router(chat_history.router)
 app.include_router(feedback.router)
 app.include_router(login.router)
 app.include_router(users.router)
