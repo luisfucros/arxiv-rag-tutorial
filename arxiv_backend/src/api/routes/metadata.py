@@ -1,8 +1,9 @@
-from api.dependencies import CurrentUser, get_task_service
+from api.dependencies import CurrentUser, get_cache, get_task_service
 from arxiv_lib.tasks.enums import TaskNames
 from arxiv_lib.tasks.schemas import PaperMetadataRequest
 from fastapi import APIRouter, Depends
 from schemas.metadata import TaskResponse
+from services.cache import CacheClient
 from services.tasks import TaskService
 
 router = APIRouter(prefix="/metadata", tags=["Metadata"])
@@ -13,7 +14,10 @@ def fetch_and_process_metadata(
     payload: PaperMetadataRequest,
     current_user: CurrentUser,
     task_handler: TaskService = Depends(get_task_service),
+    cache: CacheClient = Depends(get_cache),
 ):
+    # Flush Redis cache (db=2) so RAG reflects newly ingested papers
+    cache.flush_db()
 
     task = task_handler.async_task(
         TaskNames.metadata_fetcher_task,

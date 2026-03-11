@@ -110,5 +110,5 @@ def get_arxiv_assistant(
         chat_repo=chat_repo,
         paper_repo=paper_repo,
         client=openai_client,
-        # cache=cache
+        cache=cache,
     )
