@@ -64,3 +64,11 @@ class CacheClient:
         except Exception as e:
             logger.error(f"Error storing in cache: {e}")
             return False
+
+    def flush_db(self) -> None:
+        """Flush the entire Redis DB used by this cache (e.g. on paper ingestion)."""
+        try:
+            self.redis.flushdb()
+            logger.info("Redis cache db flushed")
+        except Exception as e:
+            logger.error(f"Error flushing cache db: {e}")
