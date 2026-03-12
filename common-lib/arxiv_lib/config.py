@@ -124,6 +124,12 @@ class RedisSettings(BaseConfigSettings):
     # Cache settings
     ttl_hours: int = 6  # Cache TTL in hours
 
+    # Rate limit (Redis-backed): requests per window
+    rate_limit_window_seconds: int = 60
+    rate_limit_global: int = 1000  # Global cap per window
+    rate_limit_per_ip: int = 100  # Per IP per window
+    rate_limit_per_user: int = 60  # Per user per window (when authenticated)
+
 
 class Settings(BaseConfigSettings):
     app_version: str = "0.1.0"

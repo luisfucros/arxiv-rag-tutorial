@@ -1,4 +1,4 @@
-from api.middlewares import LoggingMiddleware
+from api.middlewares import LoggingMiddleware, RateLimitMiddleware
 from api.routes import (
     arxiv,
     assistant,
@@ -42,6 +42,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(LoggingMiddleware)
+app.add_middleware(RateLimitMiddleware)
 
 app.include_router(tasks.router)
 app.include_router(arxiv.router)
