@@ -144,8 +144,11 @@ class Settings(BaseConfigSettings):
     vectordb_port: int = 6333
     collection_name: str = "arxiv_papers"
 
-    artifacts_buket: str = "arxiv-service"
-    localstack_host: str = "localhost:4566"
+    artifacts_buket: str = Field(
+        default="arxiv-service",
+        description="S3 bucket name for PDF artifacts; set ARTIFACTS_BUKET in production.",
+    )
+    localstack_host: str = "localhost:4566"  # Unused when environment != local
     frontend_url: str = "http://localhost:3000"
 
     algorithm: str = "HS256"
