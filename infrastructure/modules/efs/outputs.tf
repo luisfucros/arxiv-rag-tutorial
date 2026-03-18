@@ -17,3 +17,8 @@ output "access_point_arn" {
   value       = aws_efs_access_point.qdrant.arn
   description = "EFS access point ARN"
 }
+
+output "mount_target_ids" {
+  value       = aws_efs_mount_target.main[*].id
+  description = "EFS mount target IDs (one per private subnet); tasks must run in these subnets to resolve EFS DNS"
+}
