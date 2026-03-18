@@ -144,6 +144,23 @@ resource "aws_iam_role_policy_attachment" "ecs_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# EFS client permissions so ECS can mount EFS volumes (required for Qdrant task)
+resource "aws_iam_role_policy" "ecs_execution_efs" {
+  name = "efs-client"
+  role = aws_iam_role.ecs_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["elasticfilesystem:ClientMount", "elasticfilesystem:ClientRootAccess", "elasticfilesystem:ClientWrite"]
+        Resource = module.efs.file_system_arn
+      }
+    ]
+  })
+}
+
 # ------------------------------------------------------------------------------
 # ECS Migration
 # ------------------------------------------------------------------------------
@@ -179,4 +196,6 @@ module "qdrant" {
   execution_role_arn    = aws_iam_role.ecs_execution.arn
   desired_count         = 1
   tags                  = var.tags
+
+  depends_on = [module.efs, aws_iam_role_policy.ecs_execution_efs]
 }
