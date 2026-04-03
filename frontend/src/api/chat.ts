@@ -70,17 +70,35 @@ export async function* chatStream(
   sessionId: string,
   body: ChatHistoryRequest
 ): AsyncGenerator<StreamChunk> {
-  const res = await fetch(
-    `${base()}/arxiv_assistant/chat/stream?session_id=${encodeURIComponent(sessionId)}`,
-    {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(body),
+  let res: Response
+  try {
+    res = await fetch(
+      `${base()}/arxiv_assistant/chat/stream?session_id=${encodeURIComponent(sessionId)}`,
+      {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(body),
+      }
+    )
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    if (msg === 'Failed to fetch' || msg === 'Load failed' || msg === 'NetworkError') {
+      throw new Error(
+        'Cannot reach the API (network, CORS, or proxy). If you use the SPA without VITE_API_URL, ensure nginx proxies /arxiv_assistant to the backend.'
+      )
     }
-  )
+    throw new Error(msg)
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    throw new Error((err.detail as string) || 'Stream failed')
+    const detail = err.detail
+    const text =
+      typeof detail === 'string'
+        ? detail
+        : Array.isArray(detail)
+          ? detail.map((x: { msg?: string }) => x?.msg).join('; ')
+          : 'Stream failed'
+    throw new Error(text || 'Stream failed')
   }
   const reader = res.body?.getReader()
   if (!reader) throw new Error('No response body')

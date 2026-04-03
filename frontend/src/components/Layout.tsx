@@ -17,7 +17,7 @@ export function Layout() {
         <Link to="/" className={styles.logo}>
           arXiv RAG
         </Link>
-        {isAuthenticated && (
+        {isAuthenticated ? (
           <nav className={styles.nav}>
             <NavLink to="/" end>Chat</NavLink>
             <NavLink to="/ingestion">Ingestion</NavLink>
@@ -26,6 +26,11 @@ export function Layout() {
             <button type="button" onClick={handleLogout} className={styles.logout}>
               Log out
             </button>
+          </nav>
+        ) : (
+          <nav className={styles.nav}>
+            <NavLink to="/login">Sign in</NavLink>
+            <NavLink to="/register">Create account</NavLink>
           </nav>
         )}
       </header>

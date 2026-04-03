@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useAuth } from '../context/AuthContext'
 import { chatStream } from '../api/chat'
 import { listMessages, listSessions } from '../api/chatHistory'
 import { createFeedback, getFeedbackByMessage, updateFeedback } from '../api/feedback'
@@ -22,6 +23,7 @@ function toDisplayMessage(m: ChatMessageResponse): DisplayMessage {
 
 export function Chat() {
   const queryClient = useQueryClient()
+  const { token } = useAuth()
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [messages, setMessages] = useState<DisplayMessage[]>([])
   const [input, setInput] = useState('')
@@ -35,8 +37,9 @@ export function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const { data: sessions = [] } = useQuery({
-    queryKey: ['chat-sessions'],
+    queryKey: ['chat-sessions', token],
     queryFn: () => listSessions(50, 0),
+    enabled: !!token,
   })
 
   const currentSessionId = sessionId ?? (sessions[0]?.id ? String(sessions[0].id) : null)
