@@ -1,0 +1,22 @@
+# Copy to terraform.tfvars (gitignored). Terraform auto-loads terraform.tfvars from this directory.
+# Do not commit real tfvars — see .gitignore.
+
+project_name          = "arxiv-rag"
+environment           = "dev"
+aws_region            = "us-east-1"
+artifacts_bucket_name = "your-globally-unique-artifacts-bucket"
+
+# Optional:
+# vpc_cidr = "10.0.0.0/16"
+# tags     = { Owner = "you" }
+
+# Optional ECR repo suffix overrides (must include all keys if set):
+# ecr_repositories = {
+#   migration      = "ecr-migration-repo"
+#   backend        = "backend"
+#   frontend       = "frontend"
+#   data_ingestion = "data-ingestion"
+# }
+
+# Optional HTTPS / custom domain CORS (default is http://<public ALB DNS> from Terraform):
+# frontend_url_override = "https://app.example.com"

@@ -39,8 +39,28 @@ variable "db_password" {
   description = "Master password (if set, manage_master_user_password should be false)"
 }
 
-variable "repository_name" {
-  description = "ECR repository name"
+variable "ecr_repositories" {
+  type        = map(string)
+  default     = null
+  description = "Optional override for ECR repository suffixes (logical name => suffix). Defaults include migration, backend, frontend, data_ingestion."
+  nullable    = true
+}
+
+variable "openai_api_key" {
   type        = string
-  default     = "ecr-migration-repo"
+  sensitive   = true
+  description = "OpenAI API key for backend and ingestion workers"
+}
+
+variable "jwt_secret" {
+  type        = string
+  sensitive   = true
+  description = "JWT signing secret for the API (SECRET_KEY)"
+}
+
+variable "frontend_url_override" {
+  type        = string
+  default     = null
+  description = "Optional CORS origin override; leave null to use http://<public ALB DNS>"
+  nullable    = true
 }

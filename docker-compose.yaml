@@ -111,8 +111,13 @@ services:
       - db
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ""
     container_name: arxiv-rag-frontend
+    environment:
+      BACKEND_ORIGIN: http://backend:8000
     ports:
       - "3000:80"
     depends_on:

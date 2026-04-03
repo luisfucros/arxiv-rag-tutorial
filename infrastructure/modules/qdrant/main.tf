@@ -79,7 +79,7 @@ resource "aws_cloudwatch_log_group" "ecs_qdrant" {
   retention_in_days = 7
 }
 
- # NLB so EKS can reach Qdrant at a stable hostname
+# Internal NLB so ECS services (API, workers) reach Qdrant at a stable hostname
 resource "aws_lb" "qdrant" {
   name               = "${var.project_name}-qdrant-nlb"
   internal           = true
@@ -171,8 +171,25 @@ resource "aws_ecs_service" "qdrant" {
     assign_public_ip = false
   }
 
+  load_balancer {
+    target_group_arn = aws_lb_target_group.qdrant_grpc.arn
+    container_name   = "qdrant"
+    container_port   = 6333
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.qdrant_http.arn
+    container_name   = "qdrant"
+    container_port   = 6334
+  }
+
   deployment_maximum_percent         = 200
   deployment_minimum_healthy_percent = 0
+
+  depends_on = [
+    aws_lb_listener.qdrant_grpc,
+    aws_lb_listener.qdrant_http,
+  ]
 
   tags = merge(var.tags, {
     Name = "${var.project_name}-qdrant"

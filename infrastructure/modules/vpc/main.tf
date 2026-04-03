@@ -31,11 +31,10 @@ resource "aws_subnet" "public" {
 
   tags = merge(var.tags, {
     Name = "${var.project_name}-public-${var.azs[count.index]}"
-    "kubernetes.io/role/elb" = "1"
   })
 }
 
-# Private subnets (EKS, RDS, ElastiCache, ECS)
+# Private subnets (RDS, ElastiCache, ECS tasks, internal load balancers)
 resource "aws_subnet" "private" {
   count                   = length(var.private_subnet_cidrs)
   vpc_id                  = aws_vpc.main.id
@@ -45,7 +44,6 @@ resource "aws_subnet" "private" {
 
   tags = merge(var.tags, {
     Name = "${var.project_name}-private-${var.azs[count.index]}"
-    "kubernetes.io/role/internal-elb" = "1"
   })
 }
 

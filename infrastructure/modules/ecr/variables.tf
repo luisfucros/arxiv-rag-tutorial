@@ -10,10 +10,15 @@ variable "environment" {
   description = "Environment name (production, staging)"
 }
 
-variable "repository_name" {
-  description = "ECR repository name"
-  type        = string
-  default     = "ecr-migration-repo"
+variable "repositories" {
+  type        = map(string)
+  description = "Map of logical name => ECR repository name suffix (full name: {project}-{suffix}-{environment})"
+  default = {
+    migration      = "ecr-migration-repo"
+    backend        = "backend"
+    frontend       = "frontend"
+    data_ingestion = "data-ingestion"
+  }
 }
 
 variable "tags" {

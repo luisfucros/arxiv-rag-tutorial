@@ -29,10 +29,16 @@ data "aws_availability_zones" "available" {
 }
 
 locals {
-  project_name     = var.project_name
-  azs              = slice(data.aws_availability_zones.available.names, 0, 3)
-  public_cidrs    = [for i in range(3) : cidrsubnet(var.vpc_cidr, 8, i)]
-  private_cidrs   = [for i in range(3) : cidrsubnet(var.vpc_cidr, 8, i + 10)]
+  project_name   = var.project_name
+  azs            = slice(data.aws_availability_zones.available.names, 0, 3)
+  public_cidrs   = [for i in range(3) : cidrsubnet(var.vpc_cidr, 8, i)]
+  private_cidrs  = [for i in range(3) : cidrsubnet(var.vpc_cidr, 8, i + 10)]
+  ecr_repositories = var.ecr_repositories != null ? var.ecr_repositories : {
+    migration      = "ecr-migration-repo"
+    backend        = "backend"
+    frontend       = "frontend"
+    data_ingestion = "data-ingestion"
+  }
 }
 
 # ------------------------------------------------------------------------------
@@ -83,18 +89,18 @@ module "rds" {
 }
 
 # ------------------------------------------------------------------------------
-# ElastiCache Redis
+# ElastiCache Redis (Celery + API rate limits)
 # ------------------------------------------------------------------------------
-# module "elasticache" {
-#   source = "./modules/elasticache"
+module "elasticache" {
+  source = "./modules/elasticache"
 
-#   project_name            = local.project_name
-#   vpc_id                  = module.vpc.vpc_id
-#   private_subnet_ids      = module.vpc.private_subnet_ids
-#   security_group_id       = module.vpc.security_group_redis_id
-#   elasticache_node_type   = "cache.t3.micro"
-#   tags                    = var.tags
-# }
+  project_name          = local.project_name
+  vpc_id                = module.vpc.vpc_id
+  private_subnet_ids    = module.vpc.private_subnet_ids
+  security_group_id     = module.vpc.security_group_redis_id
+  elasticache_node_type = "cache.t3.micro"
+  tags                  = var.tags
+}
 
 # ------------------------------------------------------------------------------
 # ECR
@@ -102,10 +108,10 @@ module "rds" {
 module "ecr" {
   source = "./modules/ecr"
 
-  project_name    = local.project_name
-  repository_name = var.repository_name
-  environment     = var.environment
-  tags            = var.tags
+  project_name   = local.project_name
+  repositories   = local.ecr_repositories
+  environment    = var.environment
+  tags           = var.tags
 }
 
 # ------------------------------------------------------------------------------
@@ -176,7 +182,7 @@ module "migration" {
   db_port             = module.rds.port
   db_name             = module.rds.db_name
   db_username         = module.rds.db_username
-  ecr_repository_url  = module.ecr.repository_url
+  ecr_repository_url  = module.ecr.repository_urls["migration"]
   execution_role_arn  = aws_iam_role.ecs_execution.arn
   tags                = var.tags
 }
@@ -198,4 +204,47 @@ module "qdrant" {
   tags                  = var.tags
 
   depends_on = [module.efs, aws_iam_role_policy.ecs_execution_efs]
+}
+
+# ------------------------------------------------------------------------------
+# ECS — frontend (public ALB), backend + data ingestion worker (private)
+# ------------------------------------------------------------------------------
+module "ecs_app" {
+  source = "./modules/ecs_app"
+
+  project_name                = local.project_name
+  environment                 = var.environment
+  vpc_id                      = module.vpc.vpc_id
+  public_subnet_ids           = module.vpc.public_subnet_ids
+  private_subnet_ids          = module.vpc.private_subnet_ids
+  ecs_tasks_security_group_id = module.vpc.security_group_ecs_tasks_id
+  execution_role_arn          = aws_iam_role.ecs_execution.arn
+
+  ecr_urls = {
+    backend        = module.ecr.repository_urls["backend"]
+    frontend       = module.ecr.repository_urls["frontend"]
+    data_ingestion = module.ecr.repository_urls["data_ingestion"]
+  }
+
+  db_endpoint           = module.rds.endpoint
+  db_port               = tostring(module.rds.port)
+  db_name               = module.rds.db_name
+  db_username           = module.rds.db_username
+  db_password           = var.db_password
+  redis_host            = module.elasticache.redis_address
+  redis_port            = module.elasticache.redis_port
+  qdrant_nlb_dns        = module.qdrant.nlb_dns_name
+  artifacts_bucket_name = module.s3.artifacts_bucket_id
+  artifacts_bucket_arn  = module.s3.artifacts_bucket_arn
+  openai_api_key        = var.openai_api_key
+  jwt_secret            = var.jwt_secret
+  frontend_url_override = var.frontend_url_override
+
+  tags = var.tags
+
+  depends_on = [
+    module.elasticache,
+    module.qdrant,
+    aws_iam_role_policy_attachment.ecs_execution,
+  ]
 }
