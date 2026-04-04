@@ -127,13 +127,15 @@ variable "frontend_memory" {
 }
 
 variable "worker_cpu" {
-  type    = number
-  default = 1024
+  type        = number
+  default     = 2048
+  description = "Fargate CPU units for the data-ingestion/Celery worker"
 }
 
 variable "worker_memory" {
-  type    = number
-  default = 2048
+  type        = number
+  default     = 8192
+  description = "Fargate memory (MiB) for worker; dense+sparse fastembed models"
 }
 
 variable "tags" {
