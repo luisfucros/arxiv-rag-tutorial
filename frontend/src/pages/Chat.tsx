@@ -1,16 +1,22 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useAuth } from '../context/AuthContext'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { chatStream } from '../api/chat'
 import { listMessages, listSessions } from '../api/chatHistory'
 import { createFeedback, getFeedbackByMessage, updateFeedback } from '../api/feedback'
-import type { ChatMessage as ChatMessageType } from '../types/api'
-import type { ChatMessageResponse, ChatSessionResponse } from '../types/api'
-import type { FeedbackValue } from '../types/api'
+import { useAuth } from '../context/AuthContext'
+import type { ChatMessageResponse, ChatMessage as ChatMessageType, ChatSessionResponse, FeedbackValue } from '../types/api'
 import styles from './Chat.module.css'
 
 function randomSessionId(): string {
-  return crypto.randomUUID()
+  const c = globalThis.crypto
+  if (c && typeof c.randomUUID === 'function') {
+    return c.randomUUID()
+  }
+  // Non-secure HTTP (and some older browsers) omit randomUUID; UUID v4 shape is enough for client session ids.
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (ch) => {
+    const n = (Math.random() * 16) | 0
+    return (ch === 'x' ? n : (n & 0x3) | 0x8).toString(16)
+  })
 }
 
 export interface DisplayMessage extends ChatMessageType {
