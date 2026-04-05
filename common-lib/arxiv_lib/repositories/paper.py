@@ -9,6 +9,11 @@ from ..schemas import PaperCreate
 from .errors import handle_sql_errors
 
 
+def _escape_ilike_pattern(value: str) -> str:
+    """Escape %, _, and \\ so user input cannot broaden an ILIKE pattern."""
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 class PaperRepository:
     def __init__(self, session: Session):
         self.session = session
@@ -25,6 +30,22 @@ class PaperRepository:
     def get_by_arxiv_id(self, arxiv_id: str) -> Optional[Paper]:
         stmt = select(Paper).where(Paper.arxiv_id == arxiv_id)
         return self.session.scalar(stmt)
+
+    @handle_sql_errors
+    def search_by_title_substring(self, title_query: str, limit: int = 15) -> List[Paper]:
+        """Case-insensitive substring match on paper title (SQL ILIKE)."""
+        fragment = title_query.strip()
+        if not fragment:
+            return []
+        escaped = _escape_ilike_pattern(fragment)
+        pattern = f"%{escaped}%"
+        stmt = (
+            select(Paper)
+            .where(Paper.title.ilike(pattern, escape="\\"))
+            .order_by(Paper.published_date.desc())
+            .limit(limit)
+        )
+        return list(self.session.scalars(stmt))
 
     @handle_sql_errors
     def get_by_id(self, paper_id: UUID) -> Optional[Paper]:

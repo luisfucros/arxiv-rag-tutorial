@@ -39,4 +39,33 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_papers_by_name",
+            "description": (
+                "Search the SQL database for papers whose title contains the given text "
+                "(case-insensitive). Use when the user describes a paper by name or partial title "
+                "and does not give an exact arXiv ID. Returns metadata so the user can confirm "
+                "which paper they meant."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title_query": {
+                        "type": "string",
+                        "description": (
+                            "Words or phrase from the paper title to match (substring search)"
+                        ),
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum number of matches to return (default 15, max 25)",
+                    },
+                },
+                "required": ["title_query"],
+                "additionalProperties": False,
+            },
+        },
+    },
 ]

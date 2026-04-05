@@ -9,7 +9,7 @@ from repositories.chat_history import ChatRepository
 from schemas.assistant import ChatMessage
 from services.cache import CacheClient
 from services.search import SearchEngineService
-from utils import paper_to_dict
+from utils import paper_title_match_dict, paper_to_dict
 
 from .errors import handle_openai_errors
 from .guardrails import GuardrailService
@@ -43,6 +43,7 @@ class ArxivAssistant:
         self._tool_handlers = {
             "search_arxiv": self._handle_search_arxiv,
             "get_by_arxiv_id": self._handle_get_by_arxiv_id,
+            "search_papers_by_name": self._handle_search_papers_by_name,
         }
 
     @handle_openai_errors
@@ -320,7 +321,7 @@ class ArxivAssistant:
         if not query:
             raise ValueError("Missing 'query' parameter")
 
-        logger.info("Executing search_arxiv | query={}", query)
+        logger.info("Executing search_arxiv | query={} | arxiv_id={}", query, arxiv_id)
 
         results = self.search_engine.search(
             query=query,
@@ -341,3 +342,26 @@ class ArxivAssistant:
         paper = self.paper_repo.get_by_arxiv_id(arxiv_id=arxiv_id)
 
         return {"paper": paper_to_dict(paper) if paper is not None else None}
+
+    def _handle_search_papers_by_name(self, args: Dict[str, Any], user_id: int) -> Dict[str, Any]:
+        title_query = args.get("title_query")
+        if title_query is None or not str(title_query).strip():
+            raise ValueError("Missing or empty 'title_query' parameter")
+
+        raw_limit = args.get("limit", 15)
+        try:
+            limit = int(raw_limit)
+        except (TypeError, ValueError):
+            limit = 15
+        limit = max(1, min(limit, 25))
+
+        logger.info("search_papers_by_name | title_query={!r} limit={}", title_query, limit)
+
+        papers = self.paper_repo.search_by_title_substring(
+            title_query=str(title_query),
+            limit=limit,
+        )
+        return {
+            "matches": [paper_title_match_dict(p) for p in papers],
+            "count": len(papers),
+        }

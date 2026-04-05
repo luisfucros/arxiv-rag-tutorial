@@ -198,3 +198,25 @@ def test_upsert_update(repository):
     assert repository.get_count() == 1
     assert result.title == "Updated Title"
     assert result.abstract == "Updated abstract"
+
+
+def test_search_by_title_substring(repository):
+    repository.create(create_paper_schema(title="Attention Is All You Need"))
+    repository.create(create_paper_schema(title="BERT: Pre-training of Deep Bidirectional Transformers"))
+
+    hits = repository.search_by_title_substring("attention")
+    assert len(hits) == 1
+    assert "Attention" in hits[0].title
+
+
+def test_search_by_title_substring_case_insensitive(repository):
+    repository.create(create_paper_schema(title="Mixed Case TiTlE Here"))
+
+    hits = repository.search_by_title_substring("title here")
+    assert len(hits) == 1
+
+
+def test_search_by_title_substring_empty_query(repository):
+    repository.create(create_paper_schema())
+    assert repository.search_by_title_substring("") == []
+    assert repository.search_by_title_substring("   ") == []
