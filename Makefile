@@ -48,7 +48,8 @@ endif
 export TF_AWS_REGION
 
 .PHONY: help local-help prod-help
-.PHONY: local-install local-package-wheels local-clean-wheels local-up local-watch local-down
+.PHONY: local-install local-package-wheels local-clean-wheels local-bootstrap-localstack
+.PHONY: local-up local-watch local-down
 .PHONY: prod-check-config prod-tf-init prod-tf-validate prod-tf-plan prod-tf-apply
 .PHONY: prod-docker-login prod-docker-push-all prod-run-migration prod-ecs-rollout prod-deploy
 
@@ -64,8 +65,9 @@ local-help:
 	@echo "  local-install          uv sync (repo root)"
 	@echo "  local-package-wheels   build common-lib wheel + copy into app images"
 	@echo "  local-clean-wheels     remove wheels/ and app wheels dirs"
-	@echo "  local-up               docker compose up --build -d"
-	@echo "  local-watch            docker compose watch (dev sync)"
+	@echo "  local-bootstrap-localstack  start LocalStack + create S3 bucket (used by local-up)"
+	@echo "  local-up               LocalStack bucket bootstrap, then docker compose up --build -d"
+	@echo "  local-watch            LocalStack bucket bootstrap, then docker compose watch (dev sync)"
 	@echo "  local-down             docker compose down"
 
 local-install:
@@ -83,10 +85,34 @@ local-package-wheels: $(PACKAGE_SOURCES)
 local-clean-wheels:
 	rm -rf "$(WHEELS_DIR)" $(TARGET_WHEEL_DIRS_RM)
 
-local-up: local-package-wheels
+# Must match data_ingestion / common-lib default ARTIFACTS_BUKET (arxiv_lib.config Settings.artifacts_buket).
+LOCALSTACK_BUCKET ?= arxiv-service
+LOCALSTACK_READY_ATTEMPTS ?= 60
+
+local-bootstrap-localstack:
+	docker compose up -d localstack
+	@echo "Waiting for LocalStack S3 (up to $(LOCALSTACK_READY_ATTEMPTS)s)…"
+	@ready=0; \
+	for i in $$(seq 1 $(LOCALSTACK_READY_ATTEMPTS)); do \
+		if docker compose exec -T localstack awslocal s3 ls >/dev/null 2>&1; then \
+			echo "LocalStack S3 is ready."; \
+			ready=1; \
+			break; \
+		fi; \
+		sleep 1; \
+	done; \
+	if [ "$$ready" -ne 1 ]; then \
+		echo "LocalStack did not become ready in time." >&2; \
+		exit 1; \
+	fi
+	@docker compose exec -T localstack awslocal s3 mb "s3://$(LOCALSTACK_BUCKET)" 2>/dev/null || true
+	@docker compose exec -T localstack awslocal s3 ls "s3://$(LOCALSTACK_BUCKET)" >/dev/null
+	@echo "S3 bucket ready: $(LOCALSTACK_BUCKET)"
+
+local-up: local-package-wheels local-bootstrap-localstack
 	docker compose up --build -d
 
-local-watch: local-package-wheels
+local-watch: local-package-wheels local-bootstrap-localstack
 	docker compose watch
 
 local-down:
